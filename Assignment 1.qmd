@@ -1,0 +1,33 @@
+---
+title: "Analysis of Student Performance"
+author: "Nana Kwasi Danquah"
+format: html
+execute:
+  echo: true
+---
+
+## Approach
+
+I created a beachhead, where i downloaded a csv file from kaggle dateset about student performance.
+
+[Source: https://www.kaggle.com/datasets/nadeemajeedch/students-performance-10000-clean-data-eda?resource=download](https://www.kaggle.com/datasets/nadeemajeedch/students-performance-10000-clean-data-eda?resource=download)
+
+## Introduction and Planned Approach
+
+In order to determine the relationship between academic achievement and demographic, educational, and behavioral characteristics, this research examines a dataset of 10,000 students. Subject-level scores and an overall total score are used to measure student results, providing both aggregate and specific viewpoints on performance.
+
+The analytical approach is staged on purpose. First, exploratory data analysis (EDA) is used to evaluate the data's quality and structure. Understanding distributions, spotting abnormalities, and analyzing performance differences across important student attributes including gender, parental education, meal status, and test preparation involvement are all done in this step.
+
+The study proceeds to explanatory modeling once a comprehensive grasp of the data has been established. The objective is to measure and analyze the connections between student characteristics and academic results rather than concentrating only on prediction accuracy. To guarantee that results may be effectively addressed in an educational setting, simple, comprehensible models are given priority.
+
+This Quarto file documents every stage of the workflow, from data import to final findings, making it completely replicable.
+
+## Anticipated Data Challenges
+
+This dataset has a number of intrinsic difficulties. First, several variables—especially test scores—had missing values, which could have an impact on modeling outcomes and summary statistics. These missing values must be treated carefully to avoid biased findings.
+
+Second, a number of variables (such as parental education and race/ethnicity) are categorical with different degrees of granularity. Model stability and interpretation may be impacted by choices made regarding the encoding of these variables.
+
+Third, especially for high achievers, student performance metrics may show skewness or ceiling effects. This needs to be checked diagnostically because it can go against modeling assumptions.
+
+Lastly, any links found should be understood as associations rather than causal effects because the data are observational.
