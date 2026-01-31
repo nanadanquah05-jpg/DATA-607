@@ -31,3 +31,122 @@ Second, a number of variables (such as parental education and race/ethnicity) ar
 Third, especially for high achievers, student performance metrics may show skewness or ceiling effects. This needs to be checked diagnostically because it can go against modeling assumptions.
 
 Lastly, any links found should be understood as associations rather than causal effects because the data are observational.
+
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(scales)
+
+# 1. Load the data 
+students <- read_csv("Student_performance_10k.csv")
+
+# 2. Data Cleaning Workflow
+# We convert math_score to numeric because it was imported as text.
+# We then remove any rows with missing values (NA) to ensure our charts are accurate.
+students <- students %>%
+  mutate(math_score = as.numeric(as.character(math_score))) %>%
+  drop_na()
+
+# 3. Organizing Categories
+# We manually order education levels so they appear logically (from low to high) in charts.
+students$parental_level_of_education <- factor(students$parental_level_of_education, 
+    levels = c("some high school", "high school", "some college", 
+               "associate's degree", "bachelor's degree", "master's degree"))
+```
+
+## Data Overview
+We start by examining the cleaned dataset. After cleaning, we have a consistent set of scores for Math, Reading, Writing, and Science.
+
+```{r}
+head(students)
+```
+
+## Analysis of Top Achievers
+
+I filtered the data to identify "High Scorers"—students with a total score greater than 300. This count helps us see what percentage of the student body is performing at an elite level.
+
+```{r}
+high_scores <- students %>%
+  filter(total_score > 300)
+
+# Display the number of students scoring above 300
+cat("Number of students with scores over 300:", nrow(high_scores))
+```
+
+## Visualizing Performance Drivers
+
+## 1. Impact of Parental Education
+The boxplot below shows the distribution of total scores based on the parents' highest level of education.
+
+```{r}
+ggplot(students, aes(x = parental_level_of_education, y = total_score, fill = parental_level_of_education)) +
+  geom_boxplot(outlier.shape = 21, outlier.alpha = 0.3) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Total Score vs. Parental Education",
+       subtitle = "Note: Scores tend to increase with higher parental education levels.",
+       x = "Parental Education Level",
+       y = "Total Score") +
+  guides(fill = "none")
+```
+
+## 2. Effectiveness of Test Preparation
+
+We compare the average total scores of students who completed a preparation course versus those who did not.
+
+```{r}
+prep_summary <- students %>%
+  group_by(test_preparation_course) %>%
+  summarise(mean_total = mean(total_score))
+
+ggplot(prep_summary, aes(x = factor(test_preparation_course), y = mean_total, fill = factor(test_preparation_course))) +
+  geom_bar(stat = "identity", width = 0.5) +
+  theme_minimal() +
+  scale_x_discrete(labels = c("0" = "None", "1" = "Completed")) +
+  labs(title = "Average Score by Test Prep Course",
+       x = "Course Completion",
+       y = "Average Total Score") +
+  guides(fill = "none")
+```
+
+## Correlation Between Subjects
+
+To see if students who are good at one subject are likely to be good at others, we create a correlation heatmap
+
+```{r}
+# Step 1: Create a correlation matrix
+cor_data <- students %>%
+  select(math_score, reading_score, writing_score, science_score) %>%
+  cor()
+
+# Step 2: Convert to a long format for ggplot (modern way to do it without reshape2)
+cor_long <- as.data.frame(cor_data) %>%
+  rownames_to_column(var = "Subject1") %>%
+  pivot_longer(cols = -Subject1, names_to = "Subject2", values_to = "Correlation")
+
+# Step 3: Plot the heatmap
+ggplot(cor_long, aes(x = Subject1, y = Subject2, fill = Correlation)) +
+  geom_tile() +
+  geom_text(aes(label = round(Correlation, 2))) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0.5) +
+  theme_minimal() +
+  labs(title = "Subject Score Correlation Heatmap",
+       subtitle = "1.00 represents a perfect positive correlation.")
+```
+
+## Final Insights
+## 1.Prep Courses Work: 
+On average, students who completed the test preparation course scored higher than those who did not.
+
+## 2.Parental Education Influence: 
+There is a clear positive trend; students with parents holding Master's or Bachelor's degrees achieve higher median scores.
+
+## 3.The Literacy Connection: 
+Reading and Writing scores have the highest correlation (~0.95), suggesting that these two skills are nearly identical in their performance requirements.
+
+## 5.Workflow Improvement: 
+By handling the math_score as a numeric type and filtering out NAs at the start, we eliminated the warnings and errors that were hindering the analysis.
