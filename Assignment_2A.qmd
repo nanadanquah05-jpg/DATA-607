@@ -1,0 +1,44 @@
+---
+title: "Assignment_2A"
+author: "Nana Kwasi Danquah"
+format: html
+---
+
+## 1. Project Approach & Strategy
+
+The goal of this assignment was to move television show ratings from a structured relational environment (**PostgreSQL**) into an analytical environment (**R**).
+
+### The Data Choice
+
+I selected six culturally significant shows that span sitcoms and dramas: \* *The Big Bang Theory, The Blacklist, Money Heist, Prison Break, How I Met Your Mother,* and *Friends*.
+
+### The Strategy for Missing Data
+
+In any survey, "Missingness" is a reality. Rather than deleting participants who hadn't seen every show (which would discard valuable data from Desmond, Mary, George, Richard, and Richmond), I chose **Column-Wise Mean Imputation**.
+
+This approach replaces an `NA` with the average rating for that specific show. This is "human-centric" because it assumes a user's likely rating would align with the general consensus of their peers, preserving the statistical trend of the show's popularity.
+
+------------------------------------------------------------------------
+
+## 2. SQL Schema (Existing Database)
+
+The database was built with a one-to-many relationship. The `shows` table acts as the "Source of Truth" for titles, while the `ratings` table tracks individual opinions.
+
+``` sql
+/*This code was executed directly in PostgreSQL prior to R integration.
+I use SERIAL for auto-incrementing IDs and CHECK constraints to ensure 
+ratings stay between 1 and 5.
+*/
+
+CREATE TABLE shows (
+    showid SERIAL PRIMARY KEY,
+    title TEXT NOT NULL
+);
+
+CREATE TABLE ratings (
+    ratingid SERIAL PRIMARY KEY,
+    username TEXT NOT NULL,
+    showid INTEGER REFERENCES shows(showid),
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5)
+);
+```
