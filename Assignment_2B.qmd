@@ -1,0 +1,19 @@
+---
+title: "Assignment_2B"
+subtitle: "Evaluating Model Performance Across Decision Thresholds"
+author: "Nana Kwasi Danquah"
+format: html
+editor: visual
+---
+
+## 1. Introduction
+This analysis evaluates a classification model's ability to predict the sex of penguins. We examine the trade-offs between precision and recall at various probability thresholds and compare the results against a baseline null model.
+
+## 2. Approach (Methodology)
+Our approach for this project followed a structured data science workflow:
+
+1.  **Baseline Establishment:** I calculated the Null Error Rate to define the minimum performance required for the model to be considered useful.
+2.  **Probability Transformation:** I used the raw probability column (`.pred_female`) to generate binary classifications at three specific thresholds (0.2, 0.5, and 0.8).
+3.  **Error Classification:** For each threshold, I mapped results into Confusion Matrices to quantify True Positives, False Positives, True Negatives, and False Negatives.
+4.  **Multi-Metric Evaluation:** I calculated Accuracy, Precision, Recall, and F1-score to provide a multi-dimensional view of performance beyond simple accuracy.
+5.  **Strategic Contextualization:** I interpreted the statistical results into real-world conservation and research scenarios to justify threshold selection.
