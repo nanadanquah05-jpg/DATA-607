@@ -2,25 +2,26 @@
 title: "Assignment_2A"
 author: "Nana Kwasi Danquah"
 format: html
+editor: visual
 ---
 
 ## 1. Project Approach & Strategy
 
-The goal of this assignment was to move television show ratings from a structured relational environment (**PostgreSQL**) into an analytical environment (**R**).
+The goal of this assignment was to move television show ratings from **PostgreSQL** into **R**.
 
 ### The Data Choice
 
-I selected six culturally significant shows that span sitcoms and dramas: \* *The Big Bang Theory, The Blacklist, Money Heist, Prison Break, How I Met Your Mother,* and *Friends*.
+I selected six culturally significant shows that span sitcoms and dramas: *The Big Bang Theory, The Blacklist, Money Heist, Prison Break, How I Met Your Mother,* and *Friends*.
 
 ### The Strategy for Missing Data
 
 In any survey, "Missingness" is a reality. Rather than deleting participants who hadn't seen every show (which would discard valuable data from Desmond, Mary, George, Richard, and Richmond), I chose **Column-Wise Mean Imputation**.
 
-This approach replaces an `NA` with the average rating for that specific show. This is "human-centric" because it assumes a user's likely rating would align with the general consensus of their peers, preserving the statistical trend of the show's popularity.
+This approach replaces an `NA` with the average rating for that specific show. This is "human-centric" because it assumes a user's likely rating would align with the consensus of their peers, preserving the statistical trend of the show's popularity.
 
 ------------------------------------------------------------------------
 
-## 2. SQL Schema (Existing Database)
+## 2. SQL Schema
 
 The database was built with a one-to-many relationship. The `shows` table acts as the "Source of Truth" for titles, while the `ratings` table tracks individual opinions.
 
@@ -42,3 +43,101 @@ CREATE TABLE ratings (
     rating INTEGER CHECK (rating >= 1 AND rating <= 5)
 );
 ```
+
+## 3. The R-PostgreSQL Handshake
+
+Using the RPostgres driver, I establish a secure connection. Per the assignment requirements for reproducibility and security, I have used a masked password prompt.
+
+```{r}
+#| message: false
+#| warning: false
+
+library(DBI)
+library(RPostgres)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+# Secure password prompt
+pw <- rstudioapi::askForPassword("Enter PostgreSQL Password")
+
+# Establish connection
+con <- dbConnect(RPostgres::Postgres(),
+                 dbname = 'Assignment_2A', 
+                 host = 'localhost',
+                 port = 5432,
+                 user = 'postgres',
+                 password = pw)
+
+# Pull the data using a JOIN to replace ID numbers with readable Titles
+df_raw <- dbGetQuery(con, "
+    SELECT r.username, s.title, r.rating 
+    FROM ratings r 
+    JOIN shows s ON r.showid = s.showid
+")
+
+# Always close the connection once data is in R memory
+dbDisconnect(con)
+```
+
+## 4. Data Transformation: From Long to Wide
+
+SQL provides the data in "Long" format. Each show has its own column, which i "pivot" to make it relevant for a survey report.
+
+```{r}
+df_wide <- df_raw %>%
+  pivot_wider(names_from = title, values_from = rating)
+
+kable(df_wide, caption = "Table 1: Raw Data from Postgres (Showing Missingness)")
+```
+
+## 5. Final Cleaning & Imputation
+
+I fill in the blanks and convert the whole numbers to decimals in order to get the data ready for analysis.
+
+```{r}
+df_final <- df_wide %>%
+  # Convert to numeric to allow decimal averages
+  mutate(across(where(is.numeric), as.numeric)) %>%
+  # Impute missing values with the mean of the column
+  mutate(across(where(is.numeric), ~replace_na(., mean(., na.rm = TRUE)))) %>%
+  # Round for a clean presentation
+  mutate(across(where(is.numeric), round, 2))
+
+kable(df_final, caption = "Table 2: Final Imputed Dataset (Cleaned & Filled)")
+```
+
+## 6. Conclusion
+
+I was able to successfully convert fragmented survey findings into a comprehensive, analyzable dataset by linking PostgreSQL and R. I was able to retain the opinions of all five participants in the data by using Mean Imputation, which gave us a more thorough understanding of the scores for these six well-liked programs.
+
+## Graph Representation
+
+```{r}
+#| label: visualization
+#| fig-cap: "Comparison of Average Viewer Ratings"
+#| message: false
+
+library(ggplot2)
+
+#  Prepare data for plotting
+# I calculate the average for each show across all users
+plot_data <- df_final %>%
+  summarise(across(where(is.numeric), mean)) %>%
+  pivot_longer(everything(), names_to = "Show", values_to = "Average_Rating")
+
+#  Create the Plot
+ggplot(plot_data, aes(x = reorder(Show, Average_Rating), y = Average_Rating, fill = Average_Rating)) +
+  geom_col() +
+  coord_flip() +  # Makes it easier to read the show titles
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  labs(
+    title = "Which Show Won the Ratings Battle?",
+    subtitle = "Aggregated data from 5 participants (Mean Imputed)",
+    x = "TV Show",
+    y = "Average Rating (1-5 Scale)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+

@@ -7,9 +7,11 @@ editor: visual
 ---
 
 ## 1. Introduction
+
 This analysis evaluates a classification model's ability to predict the sex of penguins. We examine the trade-offs between precision and recall at various probability thresholds and compare the results against a baseline null model.
 
 ## 2. Approach (Methodology)
+
 Our approach for this project followed a structured data science workflow:
 
 1.  **Baseline Establishment:** I calculated the Null Error Rate to define the minimum performance required for the model to be considered useful.
@@ -17,3 +19,90 @@ Our approach for this project followed a structured data science workflow:
 3.  **Error Classification:** For each threshold, I mapped results into Confusion Matrices to quantify True Positives, False Positives, True Negatives, and False Negatives.
 4.  **Multi-Metric Evaluation:** I calculated Accuracy, Precision, Recall, and F1-score to provide a multi-dimensional view of performance beyond simple accuracy.
 5.  **Strategic Contextualization:** I interpreted the statistical results into real-world conservation and research scenarios to justify threshold selection.
+
+
+## 3. Exploratory Analysis & Baseline
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Load the dataset
+df <- read.csv('penguin_predictions.csv')
+
+# Calculate Null Error Rate
+counts <- table(df$sex)
+null_accuracy <- max(counts) / nrow(df)
+null_error_rate <- 1 - null_accuracy
+```
+
+
+# Actual Class Distribution
+
+```{r}
+#| label: fig-distribution
+#| fig-cap: "Distribution of Actual Sex labels in the dataset."
+ggplot(df, aes(x = sex, fill = sex)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Distribution of Actual Class (Sex)",
+       y = "Count", x = "Sex") +
+  theme_minimal()
+```
+
+The Null Error Rate is r round(null_error_rate, 4). This baseline confirms that simply guessing the majority class ("male") would lead to an error 41.94% of the time.
+
+
+## 4. Performance at Multiple Thresholds
+
+```{r}
+#| label: calculate-metrics
+thresholds <- c(0.2, 0.5, 0.8)
+
+calc_metrics <- function(t) {
+  # Predictions based on threshold
+  preds <- ifelse(df$.pred_female >= t, "female", "male")
+  
+  # Confusion Matrix elements
+  tp <- sum(df$sex == "female" & preds == "female")
+  fp <- sum(df$sex == "male" & preds == "female")
+  tn <- sum(df$sex == "male" & preds == "male")
+  fn <- sum(df$sex == "female" & preds == "male")
+  
+  # Metrics
+  accuracy <- (tp + tn) / nrow(df)
+  precision <- tp / (tp + fp)
+  recall <- tp / (tp + fn)
+  f1 <- 2 * (precision * recall) / (precision + recall)
+  
+  return(data.frame(Threshold = t, TP = tp, FP = fp, TN = tn, FN = fn, 
+                    Accuracy = accuracy, Precision = precision, 
+                    Recall = recall, F1 = f1))
+}
+
+results <- do.call(rbind, lapply(thresholds, calc_metrics))
+```
+
+#Performance Metrics Summary
+
+```{r}
+#| label: tbl-summary
+knitr::kable(results, digits = 4, caption = "Model Performance by Threshold")
+```
+
+
+## 5. Discussion: Strategic Threshold Selection
+
+# The 0.2 Threshold (Prioritization Recall)
+When it is expensive to miss a female, a 0.2 threshold is ideal.
+
+Situation: In order to give pre-nesting nutrients, a veterinarian must identify every female penguin. Even if a few males are examined needlessly, using a 0.2 threshold (Recall = 0.9487) guarantees that nearly all females are contacted.
+
+# The 0.8 Threshold (Prioritizing Precision)
+When identifying a male as female is expensive, a threshold of 0.8 is acceptable.
+
+Situation: An extremely costly genetic test that is only effective on females is being used by a researcher. They utilize a 0.8 threshold (Precision = 0.9474) to be sure that the birds selected for testing are almost certainly female in order to prevent wasting the expensive kit.

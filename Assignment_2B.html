@@ -21,6 +21,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -86,6 +121,153 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Multi-Metric Evaluation:</strong> I calculated Accuracy, Precision, Recall, and F1-score to provide a multi-dimensional view of performance beyond simple accuracy.</li>
 <li><strong>Strategic Contextualization:</strong> I interpreted the statistical results into real-world conservation and research scenarios to justify threshold selection.</li>
 </ol>
+</section>
+<section id="exploratory-analysis-baseline" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-analysis-baseline">3. Exploratory Analysis &amp; Baseline</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the dataset</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">'penguin_predictions.csv'</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Null Error Rate</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">table</span>(df<span class="sc">$</span>sex)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>null_accuracy <span class="ot">&lt;-</span> <span class="fu">max</span>(counts) <span class="sc">/</span> <span class="fu">nrow</span>(df)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>null_error_rate <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> null_accuracy</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="actual-class-distribution" class="level1">
+<h1>Actual Class Distribution</h1>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> sex, <span class="at">fill =</span> sex)) <span class="sc">+</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set2"</span>) <span class="sc">+</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of Actual Class (Sex)"</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>, <span class="at">x =</span> <span class="st">"Sex"</span>) <span class="sc">+</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div id="fig-distribution" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-distribution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="Assignment_2B_files/figure-html/fig-distribution-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-distribution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribution of Actual Sex labels in the dataset.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The Null Error Rate is r round(null_error_rate, 4). This baseline confirms that simply guessing the majority class (“male”) would lead to an error 41.94% of the time.</p>
+<section id="performance-at-multiple-thresholds" class="level2">
+<h2 class="anchored" data-anchor-id="performance-at-multiple-thresholds">4. Performance at Multiple Thresholds</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>thresholds <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">0.8</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>calc_metrics <span class="ot">&lt;-</span> <span class="cf">function</span>(t) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Predictions based on threshold</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  preds <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(df<span class="sc">$</span>.pred_female <span class="sc">&gt;=</span> t, <span class="st">"female"</span>, <span class="st">"male"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Confusion Matrix elements</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  tp <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"female"</span> <span class="sc">&amp;</span> preds <span class="sc">==</span> <span class="st">"female"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  fp <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"male"</span> <span class="sc">&amp;</span> preds <span class="sc">==</span> <span class="st">"female"</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  tn <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"male"</span> <span class="sc">&amp;</span> preds <span class="sc">==</span> <span class="st">"male"</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  fn <span class="ot">&lt;-</span> <span class="fu">sum</span>(df<span class="sc">$</span>sex <span class="sc">==</span> <span class="st">"female"</span> <span class="sc">&amp;</span> preds <span class="sc">==</span> <span class="st">"male"</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Metrics</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  accuracy <span class="ot">&lt;-</span> (tp <span class="sc">+</span> tn) <span class="sc">/</span> <span class="fu">nrow</span>(df)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  precision <span class="ot">&lt;-</span> tp <span class="sc">/</span> (tp <span class="sc">+</span> fp)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  recall <span class="ot">&lt;-</span> tp <span class="sc">/</span> (tp <span class="sc">+</span> fn)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (precision <span class="sc">*</span> recall) <span class="sc">/</span> (precision <span class="sc">+</span> recall)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">data.frame</span>(<span class="at">Threshold =</span> t, <span class="at">TP =</span> tp, <span class="at">FP =</span> fp, <span class="at">TN =</span> tn, <span class="at">FN =</span> fn, </span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>                    <span class="at">Accuracy =</span> accuracy, <span class="at">Precision =</span> precision, </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>                    <span class="at">Recall =</span> recall, <span class="at">F1 =</span> f1))</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(thresholds, calc_metrics))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>#Performance Metrics Summary</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(results, <span class="at">digits =</span> <span class="dv">4</span>, <span class="at">caption =</span> <span class="st">"Model Performance by Threshold"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="tbl-summary" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Model Performance by Threshold
+</figcaption>
+<div aria-describedby="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Threshold</th>
+<th style="text-align: right;">TP</th>
+<th style="text-align: right;">FP</th>
+<th style="text-align: right;">TN</th>
+<th style="text-align: right;">FN</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">Precision</th>
+<th style="text-align: right;">Recall</th>
+<th style="text-align: right;">F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.9140</td>
+<td style="text-align: right;">0.8605</td>
+<td style="text-align: right;">0.9487</td>
+<td style="text-align: right;">0.9024</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">51</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.9355</td>
+<td style="text-align: right;">0.9231</td>
+<td style="text-align: right;">0.9231</td>
+<td style="text-align: right;">0.9231</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.9462</td>
+<td style="text-align: right;">0.9474</td>
+<td style="text-align: right;">0.9231</td>
+<td style="text-align: right;">0.9351</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="discussion-strategic-threshold-selection" class="level2">
+<h2 class="anchored" data-anchor-id="discussion-strategic-threshold-selection">5. Discussion: Strategic Threshold Selection</h2>
+</section>
+</section>
+<section id="the-0.2-threshold-prioritization-recall" class="level1">
+<h1>The 0.2 Threshold (Prioritization Recall)</h1>
+<p>When it is expensive to miss a female, a 0.2 threshold is ideal.</p>
+<p>Situation: In order to give pre-nesting nutrients, a veterinarian must identify every female penguin. Even if a few males are examined needlessly, using a 0.2 threshold (Recall = 0.9487) guarantees that nearly all females are contacted.</p>
+</section>
+<section id="the-0.8-threshold-prioritizing-precision" class="level1">
+<h1>The 0.8 Threshold (Prioritizing Precision)</h1>
+<p>When identifying a male as female is expensive, a threshold of 0.8 is acceptable.</p>
+<p>Situation: An extremely costly genetic test that is only effective on females is being used by a researcher. They utilize a 0.8 threshold (Precision = 0.9474) to be sure that the birds selected for testing are almost certainly female in order to prevent wasting the expensive kit.</p>
 </section>
 
 </main>
