@@ -108,20 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="project-approach-strategy" class="level2">
 <h2 class="anchored" data-anchor-id="project-approach-strategy">1. Project Approach &amp; Strategy</h2>
-<p>The goal of this assignment was to move television show ratings from a structured relational environment (<strong>PostgreSQL</strong>) into an analytical environment (<strong>R</strong>).</p>
+<p>The goal of this assignment was to move television show ratings from <strong>PostgreSQL</strong> into <strong>R</strong>.</p>
 <section id="the-data-choice" class="level3">
 <h3 class="anchored" data-anchor-id="the-data-choice">The Data Choice</h3>
-<p>I selected six culturally significant shows that span sitcoms and dramas: * <em>The Big Bang Theory, The Blacklist, Money Heist, Prison Break, How I Met Your Mother,</em> and <em>Friends</em>.</p>
+<p>I selected six culturally significant shows that span sitcoms and dramas: <em>The Big Bang Theory, The Blacklist, Money Heist, Prison Break, How I Met Your Mother,</em> and <em>Friends</em>.</p>
 </section>
 <section id="the-strategy-for-missing-data" class="level3">
 <h3 class="anchored" data-anchor-id="the-strategy-for-missing-data">The Strategy for Missing Data</h3>
 <p>In any survey, “Missingness” is a reality. Rather than deleting participants who hadn’t seen every show (which would discard valuable data from Desmond, Mary, George, Richard, and Richmond), I chose <strong>Column-Wise Mean Imputation</strong>.</p>
-<p>This approach replaces an <code>NA</code> with the average rating for that specific show. This is “human-centric” because it assumes a user’s likely rating would align with the general consensus of their peers, preserving the statistical trend of the show’s popularity.</p>
+<p>This approach replaces an <code>NA</code> with the average rating for that specific show. This is “human-centric” because it assumes a user’s likely rating would align with the consensus of their peers, preserving the statistical trend of the show’s popularity.</p>
 <hr>
 </section>
 </section>
-<section id="sql-schema-existing-database" class="level2">
-<h2 class="anchored" data-anchor-id="sql-schema-existing-database">2. SQL Schema (Existing Database)</h2>
+<section id="sql-schema" class="level2">
+<h2 class="anchored" data-anchor-id="sql-schema">2. SQL Schema</h2>
 <p>The database was built with a one-to-many relationship. The <code>shows</code> table acts as the “Source of Truth” for titles, while the <code>ratings</code> table tracks individual opinions.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode sql code-with-copy"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/*This code was executed directly in PostgreSQL prior to R integration.</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">I use SERIAL for auto-incrementing IDs and CHECK constraints to ensure </span></span>
@@ -139,6 +139,229 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    showid <span class="dt">INTEGER</span> <span class="kw">REFERENCES</span> shows(showid),</span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    rating <span class="dt">INTEGER</span> <span class="kw">CHECK</span> (rating <span class="op">&gt;=</span> <span class="dv">1</span> <span class="kw">AND</span> rating <span class="op">&lt;=</span> <span class="dv">5</span>)</span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="the-r-postgresql-handshake" class="level2">
+<h2 class="anchored" data-anchor-id="the-r-postgresql-handshake">3. The R-PostgreSQL Handshake</h2>
+<p>Using the RPostgres driver, I establish a secure connection. Per the assignment requirements for reproducibility and security, I have used a masked password prompt.</p>
+</section>
+<section id="data-transformation-from-long-to-wide" class="level2">
+<h2 class="anchored" data-anchor-id="data-transformation-from-long-to-wide">4. Data Transformation: From Long to Wide</h2>
+<p>SQL provides the data in “Long” format. Each show has its own column, which i “pivot” to make it relevant for a survey report.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df_wide <span class="ot">&lt;-</span> df_raw <span class="sc">%&gt;%</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> title, <span class="at">values_from =</span> rating)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(df_wide, <span class="at">caption =</span> <span class="st">"Table 1: Raw Data from Postgres (Showing Missingness)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Table 1: Raw Data from Postgres (Showing Missingness)</caption>
+<colgroup>
+<col style="width: 9%">
+<col style="width: 20%">
+<col style="width: 22%">
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 12%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">username</th>
+<th style="text-align: right;">The Big Bang Theory</th>
+<th style="text-align: right;">How I Met Your Mother</th>
+<th style="text-align: right;">Friends</th>
+<th style="text-align: right;">The Blacklist</th>
+<th style="text-align: right;">Money Heist</th>
+<th style="text-align: right;">Prison Break</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Desmond</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mary</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">George</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Richard</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Richmond</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="final-cleaning-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="final-cleaning-imputation">5. Final Cleaning &amp; Imputation</h2>
+<p>I fill in the blanks and convert the whole numbers to decimals in order to get the data ready for analysis.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df_final <span class="ot">&lt;-</span> df_wide <span class="sc">%&gt;%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Convert to numeric to allow decimal averages</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), as.numeric)) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Impute missing values with the mean of the column</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span><span class="fu">replace_na</span>(., <span class="fu">mean</span>(., <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))) <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Round for a clean presentation</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), round, <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: There was 1 warning in `mutate()`.
+ℹ In argument: `across(where(is.numeric), round, 2)`.
+Caused by warning:
+! The `...` argument of `across()` is deprecated as of dplyr 1.1.0.
+Supply arguments directly to `.fns` through an anonymous function instead.
+
+  # Previously
+  across(a:b, mean, na.rm = TRUE)
+
+  # Now
+  across(a:b, \(x) mean(x, na.rm = TRUE))</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(df_final, <span class="at">caption =</span> <span class="st">"Table 2: Final Imputed Dataset (Cleaned &amp; Filled)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Table 2: Final Imputed Dataset (Cleaned &amp; Filled)</caption>
+<colgroup>
+<col style="width: 9%">
+<col style="width: 20%">
+<col style="width: 22%">
+<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 12%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">username</th>
+<th style="text-align: right;">The Big Bang Theory</th>
+<th style="text-align: right;">How I Met Your Mother</th>
+<th style="text-align: right;">Friends</th>
+<th style="text-align: right;">The Blacklist</th>
+<th style="text-align: right;">Money Heist</th>
+<th style="text-align: right;">Prison Break</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Desmond</td>
+<td style="text-align: right;">4.00</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mary</td>
+<td style="text-align: right;">3.67</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">4.0</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">George</td>
+<td style="text-align: right;">2.00</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.67</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Richard</td>
+<td style="text-align: right;">3.67</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.00</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5.0</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Richmond</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4.67</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.5</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">6. Conclusion</h2>
+<p>I was able to successfully convert fragmented survey findings into a comprehensive, analyzable dataset by linking PostgreSQL and R. I was able to retain the opinions of all five participants in the data by using Mean Imputation, which gave us a more thorough understanding of the scores for these six well-liked programs.</p>
+</section>
+<section id="graph-representation" class="level2">
+<h2 class="anchored" data-anchor-id="graph-representation">Graph Representation</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#  Prepare data for plotting</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># I calculate the average for each show across all users</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> df_final <span class="sc">%&gt;%</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), mean)) <span class="sc">%&gt;%</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"Show"</span>, <span class="at">values_to =</span> <span class="st">"Average_Rating"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#  Create the Plot</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(Show, Average_Rating), <span class="at">y =</span> Average_Rating, <span class="at">fill =</span> Average_Rating)) <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span>  <span class="co"># Makes it easier to read the show titles</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low =</span> <span class="st">"skyblue"</span>, <span class="at">high =</span> <span class="st">"darkblue"</span>) <span class="sc">+</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Which Show Won the Ratings Battle?"</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Aggregated data from 5 participants (Mean Imputed)"</span>,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"TV Show"</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Average Rating (1-5 Scale)"</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Assignment_2A_files/figure-html/visualization-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Comparison of Average Viewer Ratings</figcaption>
+</figure>
+</div>
+</div>
+</div>
 </section>
 
 </main>

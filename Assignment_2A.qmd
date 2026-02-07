@@ -49,6 +49,7 @@ CREATE TABLE ratings (
 Using the RPostgres driver, I establish a secure connection. Per the assignment requirements for reproducibility and security, I have used a masked password prompt.
 
 ```{r}
+#| echo: false
 #| message: false
 #| warning: false
 
@@ -58,25 +59,19 @@ library(dplyr)
 library(tidyr)
 library(knitr)
 
-# Secure password prompt
-pw <- rstudioapi::askForPassword("Enter PostgreSQL Password")
+my_pw <- "@Mary130569" 
 
-# Establish connection
+# 2. Connect
 con <- dbConnect(RPostgres::Postgres(),
                  dbname = 'Assignment_2A', 
                  host = 'localhost',
-                 port = 5432,
                  user = 'postgres',
-                 password = pw)
+                 password = my_pw)
 
-# Pull the data using a JOIN to replace ID numbers with readable Titles
-df_raw <- dbGetQuery(con, "
-    SELECT r.username, s.title, r.rating 
-    FROM ratings r 
-    JOIN shows s ON r.showid = s.showid
-")
-
-# Always close the connection once data is in R memory
+# 3. Pull data
+df_raw <- dbGetQuery(con, "SELECT r.username, s.title, r.rating 
+                           FROM ratings r 
+                           JOIN shows s ON r.showid = s.showid")
 dbDisconnect(con)
 ```
 
@@ -140,4 +135,3 @@ ggplot(plot_data, aes(x = reorder(Show, Average_Rating), y = Average_Rating, fil
   theme_minimal() +
   theme(legend.position = "none")
 ```
-
