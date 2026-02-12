@@ -1,0 +1,16 @@
+---
+title: "Assignment_3B"
+author: "Nana Kwasi Danquah"
+format: html
+editor: visual
+---
+
+## 1. Project Approach
+
+My goal is to clean up sales numbers so we can see the real trend. We do this by looking at two different timeframes at the same time:
+
+**Partitioning:** I will look at each item separately. This is crucial so that "Product A" doesn't mess up the averages for "Product B."
+
+**The Year-to-Date (YTD) Average:** I will use an Expanding Window. It starts at the first row and gets bigger as it goes down, calculating a "running average" of everything seen so far.
+
+**The 6-Day Moving Average:** I will use a Sliding Window. It only looks at the "Current Day + the 5 days before it." This is used to smooth out daily and see the current trend.
