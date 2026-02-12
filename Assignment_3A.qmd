@@ -1,0 +1,22 @@
+---
+title: "Assignment_3A"
+author: "Nana Kwasi Danquah"
+format: html
+editor: visual
+---
+
+## 1. Project Approach
+
+This project's goal is to use survey data to construct a **Global Baseline Estimate (GBE)** recommendation system. It is a statistical baseline that produces high-quality recommendations by correcting for individual and item-level biases, in contrast to elaborate machine learning models that require significant processing power.
+
+### Approach
+
+My approach follows a 5-step data science pipeline:
+
+1.  **Normalization and Ingestion:** The "Wide" matrix is imported from the spreadsheet. I pivot the data into a "Long" format (Tidy Data) because the technique necessitates mathematical operations across rows and columns.
+2.  **Sanitization of Data:** To guarantee calculation accuracy, I detect and manage non-numeric noise (such as the "?" entries present in the raw survey).
+3.  **Global Parameterization (**$\mu$): For each forecast, I compute the "Global Mean" as the initial value.
+4.  **Bias Decomposition:**
+    -   **User Bias (**$b_u$): To distinguish between "harsh" and "generous" critics, I calculate the deviation of a critic's average rating from the worldwide average.
+    -   **Movie Bias (**$b_i$): I quantify the ratio of "blockbusters" to "flops" based on how much a film's average rating differs from the global average.
+5.  **Predictive Synthesis:** To fill all gaps in the survey matrix, I use the formula $b_{u,i} = \mu + b_u + b_i$.
