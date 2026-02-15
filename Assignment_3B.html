@@ -21,6 +21,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -77,6 +112,204 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Partitioning:</strong> I will look at each item separately. This is crucial so that “Product A” doesn’t mess up the averages for “Product B.”</p>
 <p><strong>The Year-to-Date (YTD) Average:</strong> I will use an Expanding Window. It starts at the first row and gets bigger as it goes down, calculating a “running average” of everything seen so far.</p>
 <p><strong>The 6-Day Moving Average:</strong> I will use a Sliding Window. It only looks at the “Current Day + the 5 days before it.” This is used to smooth out daily and see the current trend.</p>
+</section>
+<section id="data-transformation-dplyr" class="level2">
+<h2 class="anchored" data-anchor-id="data-transformation-dplyr">2. Data Transformation (dplyr)</h2>
+<p>This section performs the actual math. I use the <code>dplyr</code> library to handle the “windows” and the <code>zoo</code> library to calculate the rolling 6-day average.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Loading the dataset you provided</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>sales_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"sales_with_window_functions.csv"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculating the Window Functions</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>final_data <span class="ot">&lt;-</span> sales_df <span class="sc">%&gt;%</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Product) <span class="sc">%&gt;%</span>      <span class="co"># Partitioning: Keep A and B separate</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Date) <span class="sc">%&gt;%</span>          <span class="co"># Ordering: Ensure the timeline is correct</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The Expanding Window (YTD)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">YTD_Average =</span> <span class="fu">cummean</span>(Units_Sold),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The Sliding Window (6-Day)</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># k=6 means a 6-day window; align='right' looks at today + 5 days back</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">Six_Day_Moving_Avg =</span> <span class="fu">rollmean</span>(Units_Sold, <span class="at">k =</span> <span class="dv">6</span>, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"right"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Displaying the results table</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(final_data, <span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 17%">
+<col style="width: 14%">
+<col style="width: 10%">
+<col style="width: 25%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Date</th>
+<th style="text-align: left;">Product</th>
+<th style="text-align: right;">Units_Sold</th>
+<th style="text-align: right;">YTD_Avg</th>
+<th style="text-align: right;">Six_Day_Moving_Avg</th>
+<th style="text-align: right;">YTD_Average</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2026-02-05</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">120.00</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">120.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-05</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">85</td>
+<td style="text-align: right;">85.00</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">85.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-06</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">115</td>
+<td style="text-align: right;">117.50</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">117.50</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-06</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">88.50</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">88.50</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-07</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">145</td>
+<td style="text-align: right;">126.67</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">126.67</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-07</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">110</td>
+<td style="text-align: right;">95.67</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">95.67</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-08</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">138</td>
+<td style="text-align: right;">129.50</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">129.50</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-08</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">105</td>
+<td style="text-align: right;">98.00</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">98.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-09</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">122.60</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">122.60</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-09</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">78</td>
+<td style="text-align: right;">94.00</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">94.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-10</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">102</td>
+<td style="text-align: right;">119.17</td>
+<td style="text-align: right;">119.17</td>
+<td style="text-align: right;">119.17</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-10</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">93.00</td>
+<td style="text-align: right;">93.00</td>
+<td style="text-align: right;">93.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2026-02-11</td>
+<td style="text-align: left;">Smartwatch A</td>
+<td style="text-align: right;">108</td>
+<td style="text-align: right;">117.57</td>
+<td style="text-align: right;">117.17</td>
+<td style="text-align: right;">117.57</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2026-02-11</td>
+<td style="text-align: left;">Smartwatch B</td>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">93.29</td>
+<td style="text-align: right;">94.67</td>
+<td style="text-align: right;">93.29</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="visualizing-the-results" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-the-results">3. Visualizing the Results</h2>
+<p>By plotting the data, I can see exactly what the window functions did. The individual points are the “noisy” daily sales, while the solid lines represent the 6-Day Moving Average.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(final_data, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">as.Date</span>(Date), <span class="at">color =</span> Product)) <span class="sc">+</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y =</span> Units_Sold), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># We updated 'size' to 'linewidth' to fix the warning</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Six_Day_Moving_Avg), <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Sales Trends: 6-Day Moving Average"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"The bold lines smooth out the daily jumps to show the true direction"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Units Sold"</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 10 rows containing missing values or values outside the scale range
+(`geom_line()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Assignment_3B_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="final-conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="final-conclusion">4. Final Conclusion</h2>
+<p>Using Window Functions allows us to see that even though sales might drop on a specific Monday, the 6-Day Moving Average shows if the business is actually healthy.</p>
+<p><strong>Smartwatch A</strong> shows high volume but a very steady trend line.</p>
+<p><strong>Smartwatch B</strong> is lower in volume but shows a very consistent “Pulse,” making it a predictable product for inventory planning.</p>
 </section>
 
 </main>

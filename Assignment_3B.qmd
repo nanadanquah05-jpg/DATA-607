@@ -14,3 +14,58 @@ My goal is to clean up sales numbers so we can see the real trend. We do this by
 **The Year-to-Date (YTD) Average:** I will use an Expanding Window. It starts at the first row and gets bigger as it goes down, calculating a "running average" of everything seen so far.
 
 **The 6-Day Moving Average:** I will use a Sliding Window. It only looks at the "Current Day + the 5 days before it." This is used to smooth out daily and see the current trend.
+
+## 2. Data Transformation (dplyr)
+
+This section performs the actual math. I use the `dplyr` library to handle the "windows" and the `zoo` library to calculate the rolling 6-day average.
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(zoo)
+
+# Loading the dataset you provided
+sales_df <- read_csv("sales_with_window_functions.csv")
+
+# Calculating the Window Functions
+final_data <- sales_df %>%
+  group_by(Product) %>%      # Partitioning: Keep A and B separate
+  arrange(Date) %>%          # Ordering: Ensure the timeline is correct
+  mutate(
+    # The Expanding Window (YTD)
+    YTD_Average = cummean(Units_Sold),
+    
+    # The Sliding Window (6-Day)
+    # k=6 means a 6-day window; align='right' looks at today + 5 days back
+    Six_Day_Moving_Avg = rollmean(Units_Sold, k = 6, fill = NA, align = "right")
+  ) %>%
+  ungroup()
+
+# Displaying the results table
+knitr::kable(final_data, digits = 2)
+```
+
+## 3. Visualizing the Results
+
+By plotting the data, I can see exactly what the window functions did. The individual points are the "noisy" daily sales, while the solid lines represent the 6-Day Moving Average.
+
+```{r}
+ggplot(final_data, aes(x = as.Date(Date), color = Product)) +
+  geom_point(aes(y = Units_Sold), alpha = 0.3) +
+  # We updated 'size' to 'linewidth' to fix the warning
+  geom_line(aes(y = Six_Day_Moving_Avg), linewidth = 1.2) + 
+  labs(
+    title = "Sales Trends: 6-Day Moving Average",
+    subtitle = "The bold lines smooth out the daily jumps to show the true direction",
+    x = "Date",
+    y = "Units Sold"
+  ) +
+  theme_minimal()
+```
+
+## 4. Final Conclusion
+
+Using Window Functions allows us to see that even though sales might drop on a specific Monday, the 6-Day Moving Average shows if the business is actually healthy.
+
+**Smartwatch A** shows high volume but a very steady trend line.
+
+**Smartwatch B** is lower in volume but shows a very consistent "Pulse," making it a predictable product for inventory planning.
