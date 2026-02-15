@@ -21,6 +21,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -118,6 +153,410 @@ window.Quarto = {
 <li><strong>Predictive Synthesis:</strong> To fill all gaps in the survey matrix, I use the formula <span class="math inline">\(b_{u,i} = \mu + b_u + b_i\)</span>.</li>
 </ol>
 </section>
+</section>
+<section id="ingestion-and-normalization" class="level2">
+<h2 class="anchored" data-anchor-id="ingestion-and-normalization">2. Ingestion and Normalization</h2>
+<p>I import the “Wide” matrix directly from the Excel file. I use the read_excel function, which correctly parses the binary format. I then pivot the data into a “Long” format (Tidy Data) by keeping the first column (the Critics) as an identifier and collapsing the movie columns.</p>
+</section>
+<section id="data-sanitization" class="level2">
+<h2 class="anchored" data-anchor-id="data-sanitization">3. Data Sanitization</h2>
+<p>I identify and handle non-numeric noise (e.g., the “?” entries found in the survey). In Excel, these often import as characters. I convert these to numeric values; symbols like “?” or text strings will automatically become NA. I then filter out these NA rows to create a clean set of numbers for our calculation.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>clean_ratings <span class="ot">&lt;-</span> tidy_ratings <span class="sc">%&gt;%</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Force conversion to numeric (turns '?' and blanks into NA)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Rating =</span> <span class="fu">suppressWarnings</span>(<span class="fu">as.numeric</span>(<span class="fu">as.character</span>(Raw_Value)))) <span class="sc">%&gt;%</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Remove rows that do not have a valid numeric rating</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Rating)) <span class="sc">%&gt;%</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Critic, Movie, Rating)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">head</span>(clean_ratings), <span class="at">caption =</span> <span class="st">"Sanitized Numeric Ratings"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Sanitized Numeric Ratings</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Critic</th>
+<th style="text-align: left;">Movie</th>
+<th style="text-align: right;">Rating</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Burton</td>
+<td style="text-align: left;">JungleBook</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Burton</td>
+<td style="text-align: left;">StarWarsForce</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: left;">CaptainAmerica</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: left;">Deadpool</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: left;">Frozen</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: left;">JungleBook</td>
+<td style="text-align: right;">3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="global-parameterization-mu" class="level2">
+<h2 class="anchored" data-anchor-id="global-parameterization-mu">4. Global Parameterization (<span class="math inline">\(\mu\)</span>)</h2>
+<p>I calculate the Global Mean (<span class="math inline">\(\mu\)</span>). This is the single most important starting point: the average of every valid rating in the entire dataset.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">mean</span>(clean_ratings<span class="sc">$</span>Rating)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"The Global Parameter (mu) is:"</span>, <span class="fu">round</span>(mu, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The Global Parameter (mu) is: 3.9344</code></pre>
+</div>
+</div>
+</section>
+<section id="bias-decomposition" class="level2">
+<h2 class="anchored" data-anchor-id="bias-decomposition">5. Bias Decomposition</h2>
+<p>I calculate the deviations for critics and movies from the global average: <strong>User Bias (</strong><span class="math inline">\(b_u\)</span>): How much a critic’s average rating deviates from <span class="math inline">\(\mu\)</span>. Positive values mean they are “generous,” negative values mean they are “harsh.” <strong>Movie Bias (</strong><span class="math inline">\(b_i\)</span>): How much a movie’s average rating deviates from <span class="math inline">\(\mu\)</span>. This identifies the “blockbusters” vs.&nbsp;the “flops.”</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate User Bias (bu)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>user_bias <span class="ot">&lt;-</span> clean_ratings <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Critic) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">b_u =</span> <span class="fu">mean</span>(Rating) <span class="sc">-</span> mu)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate Movie Bias (bi)</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>movie_bias <span class="ot">&lt;-</span> clean_ratings <span class="sc">%&gt;%</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Movie) <span class="sc">%&gt;%</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">b_i =</span> <span class="fu">mean</span>(Rating) <span class="sc">-</span> mu)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(user_bias, <span class="at">caption =</span> <span class="st">"User Biases (bu)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>User Biases (bu)</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Critic</th>
+<th style="text-align: right;">b_u</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Burton</td>
+<td style="text-align: right;">0.0655738</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: right;">-0.4344262</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dan</td>
+<td style="text-align: right;">1.0655738</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dieudonne</td>
+<td style="text-align: right;">0.7322404</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Matt</td>
+<td style="text-align: right;">-0.6844262</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mauricio</td>
+<td style="text-align: right;">-0.4344262</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Max</td>
+<td style="text-align: right;">-0.6010929</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nathan</td>
+<td style="text-align: right;">0.0655738</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Param</td>
+<td style="text-align: right;">-0.4344262</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Parshu</td>
+<td style="text-align: right;">-0.2677596</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Prashanth</td>
+<td style="text-align: right;">0.8655738</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Shipra</td>
+<td style="text-align: right;">0.0655738</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sreejaya</td>
+<td style="text-align: right;">0.7322404</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Steve</td>
+<td style="text-align: right;">0.0655738</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vuthy</td>
+<td style="text-align: right;">-0.3344262</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Xingjia</td>
+<td style="text-align: right;">1.0655738</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(movie_bias, <span class="at">caption =</span> <span class="st">"Movie Biases (bi)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Movie Biases (bi)</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Movie</th>
+<th style="text-align: right;">b_i</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CaptainAmerica</td>
+<td style="text-align: right;">0.3383010</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Deadpool</td>
+<td style="text-align: right;">0.5100182</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Frozen</td>
+<td style="text-align: right;">-0.2071535</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">JungleBook</td>
+<td style="text-align: right;">-0.0344262</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PitchPerfect2</td>
+<td style="text-align: right;">-1.2201405</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">StarWarsForce</td>
+<td style="text-align: right;">0.2194199</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="predictive-synthesis" class="level2">
+<h2 class="anchored" data-anchor-id="predictive-synthesis">6. Predictive Synthesis</h2>
+<p>I apply the formula <span class="math inline">\(b_{u,i} = \mu + b_u + b_i\)</span> to fill every gap in the matrix. This combines the overall average, the specific critic’s tendency, and the movie’s general appeal to create a customized prediction for missing ratings.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Create a full grid of every Critic and every Movie</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>full_grid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Critic =</span> <span class="fu">unique</span>(raw_data<span class="sc">$</span>Critic),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Movie =</span> <span class="fu">unique</span>(clean_ratings<span class="sc">$</span>Movie)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Join the biases and calculate the recommendation</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>final_recommendations <span class="ot">&lt;-</span> full_grid <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(user_bias, <span class="at">by =</span> <span class="st">"Critic"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(movie_bias, <span class="at">by =</span> <span class="st">"Movie"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">Estimate =</span> mu <span class="sc">+</span> b_u <span class="sc">+</span> b_i,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Standardize scale: ensure results stay between 1.0 and 5.0</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">Estimate =</span> <span class="fu">pmax</span>(<span class="dv">1</span>, <span class="fu">pmin</span>(<span class="dv">5</span>, Estimate))</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Pivot back to the original Wide Matrix format for the report</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>recommendation_matrix <span class="ot">&lt;-</span> final_recommendations <span class="sc">%&gt;%</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Critic, Movie, Estimate) <span class="sc">%&gt;%</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> Movie, <span class="at">values_from =</span> Estimate)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(recommendation_matrix, <span class="at">digits =</span> <span class="dv">2</span>, <span class="at">caption =</span> <span class="st">"Completed Global Baseline Recommendation Matrix"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Completed Global Baseline Recommendation Matrix</caption>
+<colgroup>
+<col style="width: 12%">
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 18%">
+<col style="width: 11%">
+<col style="width: 8%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Critic</th>
+<th style="text-align: right;">JungleBook</th>
+<th style="text-align: right;">StarWarsForce</th>
+<th style="text-align: right;">CaptainAmerica</th>
+<th style="text-align: right;">Deadpool</th>
+<th style="text-align: right;">Frozen</th>
+<th style="text-align: right;">PitchPerfect2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Burton</td>
+<td style="text-align: right;">3.97</td>
+<td style="text-align: right;">4.22</td>
+<td style="text-align: right;">4.34</td>
+<td style="text-align: right;">4.51</td>
+<td style="text-align: right;">3.79</td>
+<td style="text-align: right;">2.78</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Charley</td>
+<td style="text-align: right;">3.47</td>
+<td style="text-align: right;">3.72</td>
+<td style="text-align: right;">3.84</td>
+<td style="text-align: right;">4.01</td>
+<td style="text-align: right;">3.29</td>
+<td style="text-align: right;">2.28</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Dan</td>
+<td style="text-align: right;">4.97</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4.79</td>
+<td style="text-align: right;">3.78</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dieudonne</td>
+<td style="text-align: right;">4.63</td>
+<td style="text-align: right;">4.89</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4.46</td>
+<td style="text-align: right;">3.45</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Matt</td>
+<td style="text-align: right;">3.22</td>
+<td style="text-align: right;">3.47</td>
+<td style="text-align: right;">3.59</td>
+<td style="text-align: right;">3.76</td>
+<td style="text-align: right;">3.04</td>
+<td style="text-align: right;">2.03</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mauricio</td>
+<td style="text-align: right;">3.47</td>
+<td style="text-align: right;">3.72</td>
+<td style="text-align: right;">3.84</td>
+<td style="text-align: right;">4.01</td>
+<td style="text-align: right;">3.29</td>
+<td style="text-align: right;">2.28</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Max</td>
+<td style="text-align: right;">3.30</td>
+<td style="text-align: right;">3.55</td>
+<td style="text-align: right;">3.67</td>
+<td style="text-align: right;">3.84</td>
+<td style="text-align: right;">3.13</td>
+<td style="text-align: right;">2.11</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nathan</td>
+<td style="text-align: right;">3.97</td>
+<td style="text-align: right;">4.22</td>
+<td style="text-align: right;">4.34</td>
+<td style="text-align: right;">4.51</td>
+<td style="text-align: right;">3.79</td>
+<td style="text-align: right;">2.78</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Param</td>
+<td style="text-align: right;">3.47</td>
+<td style="text-align: right;">3.72</td>
+<td style="text-align: right;">3.84</td>
+<td style="text-align: right;">4.01</td>
+<td style="text-align: right;">3.29</td>
+<td style="text-align: right;">2.28</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Parshu</td>
+<td style="text-align: right;">3.63</td>
+<td style="text-align: right;">3.89</td>
+<td style="text-align: right;">4.00</td>
+<td style="text-align: right;">4.18</td>
+<td style="text-align: right;">3.46</td>
+<td style="text-align: right;">2.45</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Prashanth</td>
+<td style="text-align: right;">4.77</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4.59</td>
+<td style="text-align: right;">3.58</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Shipra</td>
+<td style="text-align: right;">3.97</td>
+<td style="text-align: right;">4.22</td>
+<td style="text-align: right;">4.34</td>
+<td style="text-align: right;">4.51</td>
+<td style="text-align: right;">3.79</td>
+<td style="text-align: right;">2.78</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Sreejaya</td>
+<td style="text-align: right;">4.63</td>
+<td style="text-align: right;">4.89</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4.46</td>
+<td style="text-align: right;">3.45</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Steve</td>
+<td style="text-align: right;">3.97</td>
+<td style="text-align: right;">4.22</td>
+<td style="text-align: right;">4.34</td>
+<td style="text-align: right;">4.51</td>
+<td style="text-align: right;">3.79</td>
+<td style="text-align: right;">2.78</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Vuthy</td>
+<td style="text-align: right;">3.57</td>
+<td style="text-align: right;">3.82</td>
+<td style="text-align: right;">3.94</td>
+<td style="text-align: right;">4.11</td>
+<td style="text-align: right;">3.39</td>
+<td style="text-align: right;">2.38</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Xingjia</td>
+<td style="text-align: right;">4.97</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: right;">4.79</td>
+<td style="text-align: right;">3.78</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
 
 </main>

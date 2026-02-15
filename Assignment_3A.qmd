@@ -20,3 +20,105 @@ My approach follows a 5-step data science pipeline:
     -   **User Bias (**$b_u$): To distinguish between "harsh" and "generous" critics, I calculate the deviation of a critic's average rating from the worldwide average.
     -   **Movie Bias (**$b_i$): I quantify the ratio of "blockbusters" to "flops" based on how much a film's average rating differs from the global average.
 5.  **Predictive Synthesis:** To fill all gaps in the survey matrix, I use the formula $b_{u,i} = \mu + b_u + b_i$.
+
+## 2. Ingestion and Normalization
+
+I import the "Wide" matrix directly from the Excel file. I use the read_excel function, which correctly parses the binary format. I then pivot the data into a "Long" format (Tidy Data) by keeping the first column (the Critics) as an identifier and collapsing the movie columns.
+
+```{r ingestion, include=FALSE}
+if (!require("readxl")) install.packages("readxl")
+library(readxl)
+library(tidyverse)
+library(knitr)
+
+# Load the Excel file
+file_path <- "MovieRatings.xlsx" 
+
+raw_data <- read_excel(file_path)
+
+# Standardize the first column name to 'Critic'
+colnames(raw_data)[1] <- "Critic"
+
+# Pivot to Long format (Tidy Data)
+# 'cols = -1' tells R to pivot everything EXCEPT the first column
+tidy_ratings <- raw_data %>%
+  pivot_longer(
+    cols = -1, 
+    names_to = "Movie", 
+    values_to = "Raw_Value"
+  )
+
+kable(head(tidy_ratings), caption = "Normalized Long Format Data")
+```
+
+## 3. Data Sanitization
+
+I identify and handle non-numeric noise (e.g., the "?" entries found in the survey). In Excel, these often import as characters. I convert these to numeric values; symbols like "?" or text strings will automatically become NA. I then filter out these NA rows to create a clean set of numbers for our calculation.
+
+```{r}
+clean_ratings <- tidy_ratings %>%
+  # Force conversion to numeric (turns '?' and blanks into NA)
+  mutate(Rating = suppressWarnings(as.numeric(as.character(Raw_Value)))) %>%
+  # Remove rows that do not have a valid numeric rating
+  filter(!is.na(Rating)) %>%
+  select(Critic, Movie, Rating)
+
+kable(head(clean_ratings), caption = "Sanitized Numeric Ratings")
+```
+
+## 4. Global Parameterization ($\mu$)
+
+I calculate the Global Mean ($\mu$). This is the single most important starting point: the average of every valid rating in the entire dataset.
+
+```{r}
+mu <- mean(clean_ratings$Rating)
+cat("The Global Parameter (mu) is:", round(mu, 4))
+```
+
+## 5. Bias Decomposition
+
+I calculate the deviations for critics and movies from the global average: **User Bias (**$b_u$): How much a critic's average rating deviates from $\mu$. Positive values mean they are "generous," negative values mean they are "harsh." **Movie Bias (**$b_i$): How much a movie's average rating deviates from $\mu$. This identifies the "blockbusters" vs. the "flops."
+
+```{r}
+# Calculate User Bias (bu)
+user_bias <- clean_ratings %>%
+  group_by(Critic) %>%
+  summarize(b_u = mean(Rating) - mu)
+
+# Calculate Movie Bias (bi)
+movie_bias <- clean_ratings %>%
+  group_by(Movie) %>%
+  summarize(b_i = mean(Rating) - mu)
+
+kable(user_bias, caption = "User Biases (bu)")
+kable(movie_bias, caption = "Movie Biases (bi)")
+```
+
+## 6. Predictive Synthesis
+
+I apply the formula $b_{u,i} = \mu + b_u + b_i$ to fill every gap in the matrix. This combines the overall average, the specific critic's tendency, and the movie's general appeal to create a customized prediction for missing ratings.
+
+```{r}
+# 1. Create a full grid of every Critic and every Movie
+full_grid <- expand.grid(
+  Critic = unique(raw_data$Critic),
+  Movie = unique(clean_ratings$Movie)
+)
+
+# 2. Join the biases and calculate the recommendation
+final_recommendations <- full_grid %>%
+  left_join(user_bias, by = "Critic") %>%
+  left_join(movie_bias, by = "Movie") %>%
+  mutate(
+    Estimate = mu + b_u + b_i,
+    # Standardize scale: ensure results stay between 1.0 and 5.0
+    Estimate = pmax(1, pmin(5, Estimate))
+  )
+
+# 3. Pivot back to the original Wide Matrix format for the report
+recommendation_matrix <- final_recommendations %>%
+  select(Critic, Movie, Estimate) %>%
+  pivot_wider(names_from = Movie, values_from = Estimate)
+
+kable(recommendation_matrix, digits = 2, caption = "Completed Global Baseline Recommendation Matrix")
+```
