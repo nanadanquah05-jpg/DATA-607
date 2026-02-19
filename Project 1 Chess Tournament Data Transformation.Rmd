@@ -1,0 +1,36 @@
+---
+title: 'Project 1: Chess Tournament Data Transformation'
+author: "Nana Kwasi Danquah"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+This project involves transforming a semi-structured chess tournament text file into a clean, tabular CSV format using R Markdown.
+
+## My Approach
+
+To fulfill this assignment, I have designed a step-by-step workflow in R to parse the semi-structured tournamentinfo.txt file.
+
+### 1. Data Cleaning
+
+I first read the raw text and removed the decorative dashed lines that act as separators. I also strip out the initial header rows to isolate the player data.
+
+### 2. Structural Mapping
+
+I observe that each player's data is split across two rows. I use indexing to separate these into two distinct vectors: one for primary data (Name and Points) and one for secondary data (State and Rating).
+
+### 3. Regex Extraction
+
+I use Regular Expressions to target specific fields:
+
+**Name:** Characters between the first and second pipe symbols.
+
+**State:** The two uppercase letters starting the second row.
+
+**Total Points:** The numeric value in the "Total" column.
+
+**Pre-Rating:** The digits immediately following "R:".
+
+### 4. Averaging Opponents
+
+I extract the numeric IDs of every opponent a player faced. I then use these IDs to look up their corresponding pre-ratings and calculate the mean for each player.
