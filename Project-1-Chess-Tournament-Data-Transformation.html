@@ -11,7 +11,7 @@
 
 <meta name="author" content="Nana Kwasi Danquah" />
 
-<meta name="date" content="2026-02-19" />
+<meta name="date" content="2026-02-22" />
 
 <title>Project 1: Chess Tournament Data Transformation</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Project 1: Chess Tournament Data
 Transformation</h1>
 <h4 class="author">Nana Kwasi Danquah</h4>
-<h4 class="date">2026-02-19</h4>
+<h4 class="date">2026-02-22</h4>
 
 </div>
 
@@ -395,6 +395,125 @@ column.</p>
 use these IDs to look up their corresponding pre-ratings and calculate
 the mean for each player.</p>
 </div>
+</div>
+<div id="load-and-clean-data" class="section level2">
+<h2>1. Load and Clean Data</h2>
+<p>I read the file and remove the non-data elements like dashed lines
+and headers.</p>
+<pre class="r"><code># Read the provided text file
+raw_txt &lt;- readLines(&quot;tournamentinfo.txt&quot;)
+
+# Remove dashed separator lines
+clean_txt &lt;- raw_txt[!str_detect(raw_txt, &quot;^-+$&quot;)]
+
+# Remove the header rows
+clean_txt &lt;- clean_txt[-(1:2)]</code></pre>
+</div>
+<div id="separate-player-rows" class="section level2">
+<h2>2. Separate Player Rows</h2>
+<p>Since each player has two rows of data, I separate them into two
+vectors.</p>
+<pre class="r"><code># Line 1 contains Name and Points
+line1 &lt;- clean_txt[seq(1, length(clean_txt), 2)]
+
+# Line 2 contains State and Pre-Rating
+line2 &lt;- clean_txt[seq(2, length(clean_txt), 2)]</code></pre>
+</div>
+<div id="extract-fields-using-regex" class="section level2">
+<h2>3. Extract Fields Using Regex</h2>
+<p>I extract the five required data points for my final CSV.</p>
+<pre class="r"><code># Extract Name, State, and Points
+player_name  &lt;- str_trim(str_extract(line1, &quot;(?&lt;=\\d\\s\\|\\s)[^|]+&quot;))
+player_state &lt;- str_extract(line2, &quot;[A-Z]{2}&quot;)
+total_pts    &lt;- as.numeric(str_extract(line1, &quot;\\d+\\.\\d&quot;))
+
+# Extract Pre-Rating (handling the &#39;R:&#39; prefix and potential provisional &#39;P&#39; ratings)
+pre_rating   &lt;- as.numeric(str_extract(str_extract(line2, &quot;R:\\s*\\d+&quot;), &quot;\\d+&quot;))
+
+# Extract Opponent IDs for the average calculation
+# I look for the ID numbers following the results W, L, or D
+opp_ids &lt;- str_extract_all(line1, &quot;(W|L|D)\\s+(\\d+)&quot;) %&gt;%
+           map(~ as.numeric(str_extract(.x, &quot;\\d+&quot;)))</code></pre>
+</div>
+<div id="calculate-average-opponent-rating" class="section level2">
+<h2>4. Calculate Average Opponent Rating</h2>
+<p>I look up each opponent’s rating and calculate the mean for every
+player.</p>
+<pre class="r"><code>avg_opp_rating &lt;- sapply(opp_ids, function(ids) {
+  round(mean(pre_rating[ids], na.rm = TRUE))
+})</code></pre>
+</div>
+<div id="final-table-and-csv-export" class="section level2">
+<h2>5. Final Table and CSV Export</h2>
+<p>I combine my results and generate the required file</p>
+<pre class="r"><code>chess_df &lt;- data.frame(
+  Name = player_name,
+  State = player_state,
+  Total_Points = total_pts,
+  Pre_Rating = pre_rating,
+  Avg_Opp_Rating = avg_opp_rating
+)
+
+# Export to CSV for submission
+write.csv(chess_df, &quot;chess_tournament_results.csv&quot;, row.names = FALSE)
+
+# Display the first few rows for validation
+knitr::kable(head(chess_df))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Name</th>
+<th align="left">State</th>
+<th align="right">Total_Points</th>
+<th align="right">Pre_Rating</th>
+<th align="right">Avg_Opp_Rating</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">GARY HUA</td>
+<td align="left">ON</td>
+<td align="right">6.0</td>
+<td align="right">1794</td>
+<td align="right">1605</td>
+</tr>
+<tr class="even">
+<td align="left">DAKSHESH DARURI</td>
+<td align="left">MI</td>
+<td align="right">6.0</td>
+<td align="right">1553</td>
+<td align="right">1469</td>
+</tr>
+<tr class="odd">
+<td align="left">ADITYA BAJAJ</td>
+<td align="left">MI</td>
+<td align="right">6.0</td>
+<td align="right">1384</td>
+<td align="right">1564</td>
+</tr>
+<tr class="even">
+<td align="left">PATRICK H SCHILLING</td>
+<td align="left">MI</td>
+<td align="right">5.5</td>
+<td align="right">1716</td>
+<td align="right">1574</td>
+</tr>
+<tr class="odd">
+<td align="left">HANSHI ZUO</td>
+<td align="left">MI</td>
+<td align="right">5.5</td>
+<td align="right">1655</td>
+<td align="right">1501</td>
+</tr>
+<tr class="even">
+<td align="left">HANSEN SONG</td>
+<td align="left">OH</td>
+<td align="right">5.0</td>
+<td align="right">1686</td>
+<td align="right">1519</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 

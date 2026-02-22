@@ -34,3 +34,81 @@ I use Regular Expressions to target specific fields:
 ### 4. Averaging Opponents
 
 I extract the numeric IDs of every opponent a player faced. I then use these IDs to look up their corresponding pre-ratings and calculate the mean for each player.
+
+```{r setup, include=FALSE}
+# I use tidyverse for string manipulation and data framing
+library(tidyverse)
+library(stringr)
+```
+
+## 1. Load and Clean Data
+
+I read the file and remove the non-data elements like dashed lines and headers.
+```{r}
+# Read the provided text file
+raw_txt <- readLines("tournamentinfo.txt")
+
+# Remove dashed separator lines
+clean_txt <- raw_txt[!str_detect(raw_txt, "^-+$")]
+
+# Remove the header rows
+clean_txt <- clean_txt[-(1:2)]
+```
+
+## 2. Separate Player Rows
+
+Since each player has two rows of data, I separate them into two vectors.
+```{r}
+# Line 1 contains Name and Points
+line1 <- clean_txt[seq(1, length(clean_txt), 2)]
+
+# Line 2 contains State and Pre-Rating
+line2 <- clean_txt[seq(2, length(clean_txt), 2)]
+```
+
+## 3. Extract Fields Using Regex
+
+I extract the five required data points for my final CSV.
+```{r}
+# Extract Name, State, and Points
+player_name  <- str_trim(str_extract(line1, "(?<=\\d\\s\\|\\s)[^|]+"))
+player_state <- str_extract(line2, "[A-Z]{2}")
+total_pts    <- as.numeric(str_extract(line1, "\\d+\\.\\d"))
+
+# Extract Pre-Rating (handling the 'R:' prefix and potential provisional 'P' ratings)
+pre_rating   <- as.numeric(str_extract(str_extract(line2, "R:\\s*\\d+"), "\\d+"))
+
+# Extract Opponent IDs for the average calculation
+# I look for the ID numbers following the results W, L, or D
+opp_ids <- str_extract_all(line1, "(W|L|D)\\s+(\\d+)") %>%
+           map(~ as.numeric(str_extract(.x, "\\d+")))
+```
+
+## 4. Calculate Average Opponent Rating
+
+I look up each opponent's rating and calculate the mean for every player.
+```{r}
+avg_opp_rating <- sapply(opp_ids, function(ids) {
+  round(mean(pre_rating[ids], na.rm = TRUE))
+})
+```
+
+## 5. Final Table and CSV Export
+
+I combine my results and generate the required file
+```{r}
+chess_df <- data.frame(
+  Name = player_name,
+  State = player_state,
+  Total_Points = total_pts,
+  Pre_Rating = pre_rating,
+  Avg_Opp_Rating = avg_opp_rating
+)
+
+# Export to CSV for submission
+write.csv(chess_df, "chess_tournament_results.csv", row.names = FALSE)
+
+# Display the first few rows for validation
+knitr::kable(head(chess_df))
+```
+
