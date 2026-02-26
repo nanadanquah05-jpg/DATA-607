@@ -1,0 +1,178 @@
+---
+title: "Assignment 5A Airline Delays: Requirements"
+author: "Nana Kwasi Danquah"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+## Overview
+
+This analysis examines arrival delay data for two airlines — **Alaska Airlines** and **AM West** — across five destination cities: Los Angeles, Phoenix, San Diego, San Francisco, and Seattle. The data comes from *Numbersense* by Kaiser Fung (McGraw Hill, 2013).
+
+---
+
+## Step 1: Load the CSV Data
+
+The CSV file uses a **wide format** that mirrors the original table, with one row per airline-status combination and one column per destination city. Empty cells appear in the airline name column where rows share the same airline.
+
+```{r load-data}
+# Read the wide-format CSV
+df_wide <- read.csv("https://raw.githubusercontent.com/nanadanquah05-jpg/DATA-607/refs/heads/main/airline_delays.csv",
+                    check.names = FALSE)
+
+# If reading locally:
+# df_wide <- read.csv("airline_delays.csv", check.names = FALSE)
+
+# Display raw data
+knitr::kable(df_wide, caption = "Raw Wide-Format Data")
+```
+
+```{r manual-data}
+# Alternatively, create dataframe directly from code
+df_wide <- data.frame(
+  Airline  = c("ALASKA", "ALASKA", "AM WEST", "AM WEST"),
+  Status   = c("on time", "delayed", "on time", "delayed"),
+  `Los Angeles`   = c(497, 62, 694, 117),
+  Phoenix         = c(221, 12, 4840, 415),
+  `San Diego`     = c(212, 20, 383, 65),
+  `San Francisco` = c(503, 102, 320, 129),
+  Seattle         = c(1841, 305, 201, 61),
+  check.names = FALSE
+)
+
+knitr::kable(df_wide, caption = "Wide-Format Airline Delay Data")
+```
+
+---
+
+## Step 2: Handle Missing Data
+
+In the original table, the airline name is only shown once per pair of rows (a common "merged cell" pattern). I fill in the missing (NA) airline names by carrying forward the last non-NA value.
+
+```{r fill-missing}
+# Simulate the blank airline cells as NA
+df_wide_na <- df_wide
+df_wide_na$Airline[c(2, 4)] <- NA
+
+cat("Before fill:\n")
+print(df_wide_na)
+
+# Fill down missing airline names
+df_wide_filled <- df_wide_na %>%
+  tidyr::fill(Airline, .direction = "down")
+
+cat("\nAfter fill:\n")
+print(df_wide_filled)
+```
+
+---
+
+## Step 3: Transform from Wide to Long Format
+
+I use `tidyr::pivot_longer()` to convert from wide (one column per city) to long (one row per airline-status-city combination). This is the **tidy** format required for analysis.
+
+```{r pivot-long}
+df_long <- df_wide %>%
+  pivot_longer(
+    cols      = c("Los Angeles", "Phoenix", "San Diego", "San Francisco", "Seattle"),
+    names_to  = "City",
+    values_to = "Count"
+  )
+
+knitr::kable(head(df_long, 10), caption = "Long-Format Data (first 10 rows)")
+```
+
+---
+
+## Step 4: Overall Delay Rate Comparison
+
+I compute the **percentage of delayed flights** for each airline overall (across all cities).
+
+```{r overall-comparison}
+overall <- df_long %>%
+  group_by(Airline, Status) %>%
+  summarise(Total = sum(Count), .groups = "drop") %>%
+  group_by(Airline) %>%
+  mutate(
+    Grand_Total  = sum(Total),
+    Pct          = round(100 * Total / Grand_Total, 1)
+  ) %>%
+  filter(Status == "delayed")
+
+knitr::kable(overall %>% select(Airline, Delayed = Total, Total_Flights = Grand_Total, Delay_Pct = Pct),
+             caption = "Overall Delay Rate by Airline")
+```
+
+```{r overall-chart}
+ggplot(overall, aes(x = Airline, y = Pct, fill = Airline)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = paste0(Pct, "%")), vjust = -0.5, size = 5) +
+  scale_fill_manual(values = c("ALASKA" = "#0072B2", "AM WEST" = "#E69F00")) +
+  labs(title = "Overall Delay Rate by Airline",
+       x = NULL, y = "Delay Rate (%)") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none") +
+  ylim(0, 20)
+```
+
+**Finding:** Overall, AM WEST has a lower delay rate (~11%) compared to Alaska Airlines (~13%). This might lead us to conclude AM WEST performs better — but city-level analysis tells a different story.
+
+---
+
+## Step 5: City-by-City Delay Rate Comparison
+
+```{r city-comparison}
+city_rates <- df_long %>%
+  group_by(Airline, City) %>%
+  mutate(City_Total = sum(Count)) %>%
+  filter(Status == "delayed") %>%
+  mutate(Delay_Pct = round(100 * Count / City_Total, 1)) %>%
+  select(Airline, City, Delayed = Count, City_Total, Delay_Pct)
+
+knitr::kable(city_rates, caption = "Delay Rate by Airline and City")
+```
+
+```{r city-chart}
+ggplot(city_rates, aes(x = City, y = Delay_Pct, fill = Airline)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste0(Delay_Pct, "%")),
+            position = position_dodge(width = 0.9), vjust = -0.4, size = 3.5) +
+  scale_fill_manual(values = c("ALASKA" = "#0072B2", "AM WEST" = "#E69F00")) +
+  labs(title = "Delay Rate by Airline and City",
+       x = "Destination City", y = "Delay Rate (%)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+**Finding:** In **every single city**, Alaska Airlines has a *lower* delay rate than AM WEST. This is the opposite of the overall comparison!
+
+---
+
+## Step 6: Explaining the Discrepancy (Simpson's Paradox)
+
+```{r simpsons-paradox}
+# Show volume of flights per city per airline
+volume <- df_long %>%
+  group_by(Airline, City) %>%
+  summarise(Flights = sum(Count), .groups = "drop") %>%
+  pivot_wider(names_from = Airline, values_from = Flights)
+
+knitr::kable(volume, caption = "Total Flights per City per Airline")
+```
+
+This reversal is a classic example of **Simpson's Paradox** — a phenomenon where a trend that appears in aggregated data disappears or reverses when the data is broken into subgroups.
+
+**Why does it happen here?**
+
+- **AM WEST flies heavily through Phoenix** (4,840 + 415 = 5,255 flights), which has a relatively low delay rate (~8%). This low-delay, high-volume hub drags AM WEST's *overall* average down — making it *look* better overall.
+- **Alaska Airlines flies most of its flights through Seattle** (1,841 + 305 = 2,146 flights), which has a much higher delay rate (~14%). Seattle's weather and congestion inflate Alaska's overall delay average.
+- But when I compare the two airlines **within each city**, Alaska is consistently better.
+
+**Conclusion:** AM WEST's favorable overall delay rate is a statistical artifact of its route mix, not a genuine reflection of on-time performance. Alaska Airlines actually performs better at every individual destination. This example illustrates why it is critical to examine data at multiple levels of aggregation before drawing conclusions.
