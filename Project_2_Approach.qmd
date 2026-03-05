@@ -1,0 +1,102 @@
+---
+title: "Project 2 — Data Tidying and Transformation"
+subtitle: "Approach"
+author: "Nana Kwasi Danquah"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: flatly
+execute:
+  echo: true
+  warning: false
+---
+
+## Approach
+
+### Dataset Selection
+
+I will select three independent, structurally wide-format datasets from Week 5 Discussion 5A. Based on my Assignment 5A work, I have identified wide-format datasets suitable for tidying and transformation. Each dataset will meet the following criteria:
+
+- **Wide-format structure**: Multiple columns represent the same variable measured across different conditions, time periods, or groups
+- **Independence**: Each dataset is analyzed separately with no data reuse across submissions
+- **Source verification**: Confirmed from Discussion 5A postings (excluding the instructor's sample)
+
+**My three datasets:**
+
+1. **Airline Delays Data** (from Assignment 5A) 
+   - Source: *Numbersense* by Kaiser Fung (McGraw Hill, 2013)
+   - Two airlines (Alaska, AM West) with on-time and delayed flight counts across five destination cities (Los Angeles, Phoenix, San Diego, San Francisco, Seattle)
+   - Original structure: 4 rows (Airline + Status combinations) × 7 columns (Airline, Status, plus 5 city columns)
+   - Wide-format rationale: Each city is a separate column representing the same measurement (flight count) across different destinations
+
+2. **Hotel Guest Satisfaction Data** 
+   - Source: Hypothetical hotel chain satisfaction survey data
+   - Three hotel brands (Luxury Inn, Premier Hotels, Budget Stay) with satisfaction ratings (Satisfied, Neutral, Dissatisfied) across five regions (Northeast, Southeast, Midwest, Southwest, West)
+   - Original structure: 9 rows (3 brands × 3 satisfaction levels) × 7 columns (Brand, Satisfaction_Level, plus 5 region columns)
+   - Wide-format rationale: Each region is a separate column representing guest count responses with the same satisfaction rating level
+   - Analysis focus: Compare satisfaction rates across hotel brands and regions; identify whether certain brands perform consistently better or if regional variation drives perceived satisfaction differences
+
+3. **E-commerce Product Return Rates Data** 
+   - Source: Hypothetical online retailer transaction data
+   - Four product categories (Electronics, Clothing, Home & Garden, Sports Equipment) with return status (Returned, Not Returned) across five sales channels (Website, Mobile App, Amazon, eBay, Physical Store)
+   - Original structure: 8 rows (4 categories × 2 return statuses) × 7 columns (Category, Return_Status, plus 5 channel columns)
+   - Wide-format rationale: Each sales channel is a separate column representing the count of transactions with the same return status
+   - Analysis focus: Compare return rates by product category and sales channel; investigate whether category performance varies by channel or if channel characteristics (e.g., mobile vs. desktop) drive return behavior
+
+For each dataset, I will document the source, original row/column counts, and what makes it structurally "wide." All three datasets follow the same wide-format pattern: repeated measurements across categorical dimensions (destinations, regions, or channels) that require pivoting for tidy analysis.
+
+### Raw Data Construction (Step 3.1)
+
+For each of the three datasets, I will:
+
+1. **Extract and preserve** all information from the original dataset exactly as presented
+2. **Create a `.csv` file** with UTF-8 encoding, using descriptive filenames:
+   - `airline_delays_raw.csv` (the assignment 5A dataset)
+   - `dataset_2_raw.csv`
+   - `dataset_3_raw.csv`
+3. **Verify integrity** by confirming row/column counts match the original
+4. **Commit to GitHub** before proceeding to tidying, with all raw data files publicly accessible
+
+**For the Airline Delays dataset specifically:**
+- Preserve the original 4 rows × 7 columns structure (Airline, Status, and five city columns)
+- Maintain the merged-cell pattern where airline names repeat (or leave blank) for status rows
+- Store as `data/airline_delays_raw.csv`
+
+### Data Tidying Pipeline (Step 3.2)
+
+For each dataset, I will build a reproducible tidying pipeline in R that explicitly demonstrates:
+
+**1. Reshape from wide to long format**
+- Use `pivot_longer()` to convert destination city columns into key-value pairs
+- For Airline Delays: convert `Los Angeles, Phoenix, San Diego, San Francisco, Seattle` columns into a single `City` column with `Count` values
+- For other datasets: identify and pivot the appropriate columns
+
+**2. Normalize variable structure**
+- Convert columns to appropriate data types (numeric, character, date, etc.)
+- For Airline Delays: ensure `Count` is numeric, `Airline` and `City` are character
+- Standardize measurement units if variables have mixed scales
+
+**3. Rename variables consistently**
+- Apply `snake_case` naming convention (lowercase, underscores)
+- For Airline Delays: rename columns to `airline`, `status`, `city`, `count`
+- Use `rename()` and `rename_with(tolower)` functions
+- Document the mapping of old names to new names
+
+**4. Address missing and inconsistent values**
+- For Airline Delays: handle the merged-cell pattern using `tidyr::fill()` to carry forward airline names for delayed rows
+- Identify and document any other missing values (NA, blanks, coded values)
+- Apply `drop_na()`, `replace_na()`, `fill()`, or `filter()` as appropriate
+- Provide a summary of rows/values affected
+
+
+### Analysis (Step 3.3)
+
+For each tidy dataset, I will:
+
+1. **Reference the original Discussion 5A posting** to identify the specific analysis question or summary requested
+2. **Perform analysis only on the tidy dataset** (never on the raw wide-format data)
+3. **Generate three types of outputs**:
+
+ 
