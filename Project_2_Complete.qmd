@@ -1,0 +1,640 @@
+---
+title: "Project 2 — Data Tidying and Transformation"
+author: "Nana Kwasi Danquah"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    theme: flatly
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(gt)
+```
+
+---
+
+## Overview
+
+This document outlines the systematic approach to completing Project 2: Data Tidying and Transformation. The project involves selecting three independent wide-format datasets and transforming them into tidy formats suitable for analysis using R's `tidyr` and `dplyr` packages.
+
+
+# Dataset 1: Airline Delays Analysis
+
+## Data Source
+
+This dataset comes from *Numbersense* by Kaiser Fung (McGraw Hill, 2013) and examines arrival delay patterns for two airlines (Alaska Airlines and AM West) across five U.S. destination cities: Los Angeles, Phoenix, San Diego, San Francisco, and Seattle. The data captures the count of on-time and delayed flights for each airline-city combination.
+
+
+## Data Structure Before Tidying
+
+### Raw Wide-Format Data
+
+The original dataset is presented in a wide format with one row per airline-status combination and one column per destination city:
+
+```{r load-airline-raw}
+# Load raw airline delays data
+airline_raw <- read.csv("airline_delays_raw.csv")
+
+# Display the raw structure
+knitr::kable(airline_raw, caption = "Table 1: Raw Wide-Format Airline Delay Data")
+
+# Report dimensions
+cat("Dimensions: ", nrow(airline_raw), " rows × ", ncol(airline_raw), " columns\n")
+cat("Column names: ", paste(names(airline_raw), collapse = ", "), "\n")
+```
+
+
+
+## Transformation Steps
+
+### Step 1: Handle Missing Values (Merged-Cell Pattern)
+
+In the original table, airline names might appear only once per pair of rows (a common spreadsheet pattern). We'll simulate and handle this:
+
+```{r airline-fill-missing}
+# Create a version with missing airline names to simulate the original format
+airline_na <- airline_raw
+airline_na$Airline[c(2, 4)] <- NA
+
+cat("Data WITH missing values (simulating merged cells):\n")
+print(airline_na)
+
+# Fill down the missing airline names
+airline_filled <- airline_na %>%
+  fill(Airline, .direction = "down")
+
+cat("\nData AFTER filling missing values:\n")
+print(airline_filled)
+
+cat("\nRows affected: 2 (rows with NA airline names)")
+```
+
+### Step 2: Reshape from Wide to Long Format
+
+Convert from wide (cities as columns) to long (cities as rows):
+
+```{r airline-pivot-long}
+# Pivot longer: convert city columns to rows
+airline_long <- airline_filled %>%
+  pivot_longer(
+    cols = c("Los_Angeles", "Phoenix", "San_Diego", "San_Francisco", "Seattle"),
+    names_to = "city",
+    values_to = "count"
+  ) %>%
+  mutate(city = gsub("_", " ", city))
+
+knitr::kable(head(airline_long, 10), 
+             caption = "Table 2: Airline Data After Pivoting to Long Format")
+
+cat("Dimensions after pivot: ", nrow(airline_long), " rows × ", ncol(airline_long), " columns\n")
+cat("Original: 4 rows × 7 cols → Tidy: ", nrow(airline_long), " rows × ", ncol(airline_long), " cols\n")
+```
+
+### Step 3: Normalize Variable Structure
+
+Convert data types and standardize values:
+
+```{r airline-normalize}
+# Normalize data types and structure
+airline_tidy <- airline_long %>%
+  mutate(
+    count = as.numeric(count),
+    airline = tolower(Airline),
+    status = tolower(Status),
+    city = tolower(city)
+  ) %>%
+  select(airline, status, city, count) %>%
+  arrange(airline, status, city)
+
+knitr::kable(head(airline_tidy, 12),
+             caption = "Table 3: Airline Data After Normalization (snake_case)")
+
+cat("Data types:\n")
+print(sapply(airline_tidy, class))
+```
+
+### Step 4: Verify Data Integrity
+
+```{r airline-verify}
+cat("Summary of tidy airline data:\n")
+print(summary(airline_tidy))
+
+cat("\nNo missing values:\n")
+cat("Rows with NA: ", nrow(airline_tidy[!complete.cases(airline_tidy),]), "\n")
+
+cat("\nUnique values:\n")
+cat("Airlines: ", paste(unique(airline_tidy$airline), collapse = ", "), "\n")
+cat("Statuses: ", paste(unique(airline_tidy$status), collapse = ", "), "\n")
+cat("Cities: ", paste(unique(airline_tidy$city), collapse = ", "), "\n")
+
+cat("\nTotal flights: ", sum(airline_tidy$count), "\n")
+```
+
+---
+
+## Analytical Methods
+
+### Overall Delay Rate Comparison
+
+I calculate the percentage of delayed flights for each airline across all cities combined:
+
+```{r airline-overall-analysis}
+airline_overall <- airline_tidy %>%
+  group_by(airline, status) %>%
+  summarise(total = sum(count), .groups = "drop") %>%
+  group_by(airline) %>%
+  mutate(
+    grand_total = sum(total),
+    pct = round(100 * total / grand_total, 2)
+  ) %>%
+  filter(status == "delayed") %>%
+  select(airline, delayed_flights = total, total_flights = grand_total, delay_pct = pct)
+
+knitr::kable(airline_overall,
+             caption = "Table 4: Overall Delay Rate by Airline")
+```
+
+### City-by-City Delay Rate Analysis
+
+I break down delay rates for each airline within each city:
+
+```{r airline-city-analysis}
+airline_by_city <- airline_tidy %>%
+  group_by(airline, city) %>%
+  mutate(city_total = sum(count)) %>%
+  filter(status == "delayed") %>%
+  mutate(delay_pct = round(100 * count / city_total, 2)) %>%
+  select(airline, city, delayed = count, city_total, delay_pct) %>%
+  arrange(city, airline)
+
+knitr::kable(airline_by_city,
+             caption = "Table 5: Delay Rate by Airline and City")
+```
+
+---
+
+## Visualizations
+
+### Overall Delay Rate by Airline
+
+```{r airline-viz-overall}
+ggplot(airline_overall, aes(x = airline, y = delay_pct, fill = airline)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = paste0(delay_pct, "%")), vjust = -0.5, size = 5, fontface = "bold") +
+  scale_fill_manual(values = c("alaska" = "#0072B2", "am west" = "#E69F00")) +
+  labs(
+    title = "Overall Delay Rate by Airline",
+    x = "Airline", 
+    y = "Delay Rate (%)",
+    caption = "Source: Numbersense by Kaiser Fung (2013)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ylim(0, 20)
+```
+
+### Delay Rate by Airline and City
+
+```{r airline-viz-city}
+ggplot(airline_by_city, aes(x = city, y = delay_pct, fill = airline)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste0(delay_pct, "%")),
+            position = position_dodge(width = 0.9), vjust = -0.4, size = 3) +
+  scale_fill_manual(values = c("alaska" = "#0072B2", "am west" = "#E69F00")) +
+  labs(
+    title = "Delay Rate by Airline and City",
+    x = "Destination City", 
+    y = "Delay Rate (%)",
+    fill = "Airline",
+    caption = "Source: Numbersense by Kaiser Fung (2013)"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  )
+```
+
+
+# Dataset 2: Hotel Guest Satisfaction Analysis
+
+## Data Source
+
+This dataset represents a hypothetical hotel chain customer satisfaction survey capturing guest feedback across three brands and five regions in the United States. The data records the number of survey responses in each satisfaction category (Satisfied, Neutral, Dissatisfied) by brand and region.
+
+
+## Data Structure Before Tidying
+
+### Raw Wide-Format Data
+
+The original dataset uses a wide format with one row per brand-satisfaction combination and one column per region:
+
+```{r load-hotel-raw}
+# Load raw hotel satisfaction data
+hotel_raw <- read.csv("hotel_satisfaction_raw.csv")
+
+# Display the raw structure
+knitr::kable(hotel_raw, caption = "Table 6: Raw Wide-Format Hotel Satisfaction Data")
+
+# Report dimensions
+cat("Dimensions: ", nrow(hotel_raw), " rows × ", ncol(hotel_raw), " columns\n")
+cat("Column names: ", paste(names(hotel_raw), collapse = ", "), "\n")
+```
+
+
+## Transformation Steps
+
+### Step 1: Handle Missing Values
+
+Fill missing brand names (simulating merged cells in source data):
+
+```{r hotel-fill-missing}
+# Create a version with missing brand names
+hotel_na <- hotel_raw
+hotel_na$Brand[c(2, 3, 5, 6, 8, 9)] <- NA
+
+cat("Data WITH missing values:\n")
+print(hotel_na)
+
+# Fill down the missing brand names
+hotel_filled <- hotel_na %>%
+  fill(Brand, .direction = "down")
+
+cat("\nData AFTER filling missing values:\n")
+print(hotel_filled)
+
+cat("\nRows affected: 6 (rows with NA brand names)")
+```
+
+### Step 2: Reshape from Wide to Long Format
+
+Convert from wide (regions as columns) to long (regions as rows):
+
+```{r hotel-pivot-long}
+# Pivot longer: convert region columns to rows
+hotel_long <- hotel_filled %>%
+  pivot_longer(
+    cols = c("Northeast", "Southeast", "Midwest", "Southwest", "West"),
+    names_to = "region",
+    values_to = "guest_count"
+  )
+
+knitr::kable(head(hotel_long, 12), 
+             caption = "Table 7: Hotel Data After Pivoting to Long Format")
+
+cat("Dimensions after pivot: ", nrow(hotel_long), " rows × ", ncol(hotel_long), " columns\n")
+cat("Original: 9 rows × 7 cols → Tidy: ", nrow(hotel_long), " rows × ", ncol(hotel_long), " cols\n")
+```
+
+### Step 3: Normalize Variable Structure
+
+Convert data types and standardize naming:
+
+```{r hotel-normalize}
+# Normalize data types and structure
+hotel_tidy <- hotel_long %>%
+  mutate(
+    guest_count = as.numeric(guest_count),
+    brand = tolower(Brand),
+    satisfaction_level = tolower(Satisfaction_Level),
+    region = tolower(region)
+  ) %>%
+  select(brand, satisfaction_level, region, guest_count) %>%
+  arrange(brand, satisfaction_level, region)
+
+knitr::kable(head(hotel_tidy, 15),
+             caption = "Table 8: Hotel Data After Normalization")
+
+cat("Data types:\n")
+print(sapply(hotel_tidy, class))
+```
+
+### Step 4: Verify Data Integrity
+
+```{r hotel-verify}
+cat("Summary of tidy hotel data:\n")
+print(summary(hotel_tidy))
+
+cat("\nNo missing values:\n")
+cat("Rows with NA: ", nrow(hotel_tidy[!complete.cases(hotel_tidy),]), "\n")
+
+cat("\nUnique values:\n")
+cat("Brands: ", paste(unique(hotel_tidy$brand), collapse = ", "), "\n")
+cat("Satisfaction levels: ", paste(unique(hotel_tidy$satisfaction_level), collapse = ", "), "\n")
+cat("Regions: ", paste(unique(hotel_tidy$region), collapse = ", "), "\n")
+
+cat("\nTotal survey responses: ", sum(hotel_tidy$guest_count), "\n")
+```
+
+---
+
+## Analytical Methods
+
+### Overall Satisfaction Rate by Brand
+
+I calculate the percentage of satisfied responses for each hotel brand across all regions:
+
+```{r hotel-overall-analysis}
+hotel_overall <- hotel_tidy %>%
+  group_by(brand, satisfaction_level) %>%
+  summarise(total = sum(guest_count), .groups = "drop") %>%
+  group_by(brand) %>%
+  mutate(
+    grand_total = sum(total),
+    pct = round(100 * total / grand_total, 2)
+  ) %>%
+  filter(satisfaction_level == "satisfied") %>%
+  select(brand, satisfied_count = total, total_responses = grand_total, satisfaction_pct = pct)
+
+knitr::kable(hotel_overall,
+             caption = "Table 9: Overall Satisfaction Rate by Hotel Brand")
+```
+
+### Satisfaction Rate by Brand and Region
+
+```{r hotel-region-analysis}
+hotel_by_region <- hotel_tidy %>%
+  group_by(brand, region) %>%
+  mutate(region_total = sum(guest_count)) %>%
+  filter(satisfaction_level == "satisfied") %>%
+  mutate(satisfaction_pct = round(100 * guest_count / region_total, 2)) %>%
+  select(brand, region, satisfied = guest_count, region_total, satisfaction_pct) %>%
+  arrange(region, brand)
+
+knitr::kable(hotel_by_region,
+             caption = "Table 10: Satisfaction Rate by Brand and Region")
+```
+
+---
+
+## Visualizations
+
+### Overall Satisfaction Rate by Brand
+
+```{r hotel-viz-overall}
+ggplot(hotel_overall, aes(x = brand, y = satisfaction_pct, fill = brand)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = paste0(satisfaction_pct, "%")), vjust = -0.5, size = 5, fontface = "bold") +
+  scale_fill_manual(values = c("budget stay" = "#E41A1C", "luxury inn" = "#377EB8", "premier hotels" = "#4DAF4A")) +
+  labs(
+    title = "Overall Customer Satisfaction Rate by Hotel Brand",
+    x = "Hotel Brand", 
+    y = "Satisfaction Rate (%)",
+    caption = "Source: Hotel chain satisfaction survey"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ylim(0, 100)
+```
+
+### Satisfaction Rate by Brand and Region
+
+```{r hotel-viz-region}
+ggplot(hotel_by_region, aes(x = region, y = satisfaction_pct, fill = brand)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste0(satisfaction_pct, "%")),
+            position = position_dodge(width = 0.9), vjust = -0.4, size = 3) +
+  scale_fill_manual(values = c("budget stay" = "#E41A1C", "luxury inn" = "#377EB8", "premier hotels" = "#4DAF4A")) +
+  labs(
+    title = "Guest Satisfaction Rate by Hotel Brand and Region",
+    x = "Region", 
+    y = "Satisfaction Rate (%)",
+    fill = "Brand",
+    caption = "Source: Hotel chain satisfaction survey"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  )
+```
+
+
+# Dataset 3: E-commerce Product Return Rates Analysis
+
+## Data Source
+
+This dataset represents transaction records from a hypothetical online retailer capturing product returns across four merchandise categories and five sales channels. The data records the count of returned and non-returned items by product category and sales channel.
+
+
+## Data Structure Before Tidying
+
+### Raw Wide-Format Data
+
+The original dataset uses a wide format with one row per category-return status combination and one column per sales channel:
+
+```{r load-ecommerce-raw}
+# Load raw e-commerce returns data
+ecommerce_raw <- read.csv("ecommerce_returns_raw.csv")
+
+# Display the raw structure
+knitr::kable(ecommerce_raw, caption = "Table 11: Raw Wide-Format E-commerce Returns Data")
+
+# Report dimensions
+cat("Dimensions: ", nrow(ecommerce_raw), " rows × ", ncol(ecommerce_raw), " columns\n")
+cat("Column names: ", paste(names(ecommerce_raw), collapse = ", "), "\n")
+```
+
+
+
+## Transformation Steps
+
+### Step 1: Handle Missing Values
+
+Fill missing category names (simulating merged cells):
+
+```{r ecommerce-fill-missing}
+# Create a version with missing category names
+ecommerce_na <- ecommerce_raw
+ecommerce_na$Product_Category[c(2, 4, 6, 8)] <- NA
+
+cat("Data WITH missing values:\n")
+print(ecommerce_na)
+
+# Fill down the missing category names
+ecommerce_filled <- ecommerce_na %>%
+  fill(Product_Category, .direction = "down")
+
+cat("\nData AFTER filling missing values:\n")
+print(ecommerce_filled)
+
+cat("\nRows affected: 4 (rows with NA category names)")
+```
+
+### Step 2: Reshape from Wide to Long Format
+
+Convert from wide (channels as columns) to long (channels as rows):
+
+```{r ecommerce-pivot-long}
+# Pivot longer: convert channel columns to rows
+ecommerce_long <- ecommerce_filled %>%
+  pivot_longer(
+    cols = c("Website", "Mobile_App", "Amazon", "eBay", "Physical_Store"),
+    names_to = "sales_channel",
+    values_to = "transaction_count"
+  )
+
+knitr::kable(head(ecommerce_long, 12), 
+             caption = "Table 12: E-commerce Data After Pivoting to Long Format")
+
+cat("Dimensions after pivot: ", nrow(ecommerce_long), " rows × ", ncol(ecommerce_long), " columns\n")
+cat("Original: 8 rows × 7 cols → Tidy: ", nrow(ecommerce_long), " rows × ", ncol(ecommerce_long), " cols\n")
+```
+
+### Step 3: Normalize Variable Structure
+
+Convert data types and standardize naming:
+
+```{r ecommerce-normalize}
+# Normalize data types and structure
+ecommerce_tidy <- ecommerce_long %>%
+  mutate(
+    transaction_count = as.numeric(transaction_count),
+    product_category = tolower(Product_Category),
+    return_status = tolower(Return_Status),
+    sales_channel = tolower(gsub("_", " ", sales_channel))
+  ) %>%
+  select(product_category, return_status, sales_channel, transaction_count) %>%
+  arrange(product_category, return_status, sales_channel)
+
+knitr::kable(head(ecommerce_tidy, 15),
+             caption = "Table 13: E-commerce Data After Normalization")
+
+cat("Data types:\n")
+print(sapply(ecommerce_tidy, class))
+```
+
+### Step 4: Verify Data Integrity
+
+```{r ecommerce-verify}
+cat("Summary of tidy e-commerce data:\n")
+print(summary(ecommerce_tidy))
+
+cat("\nNo missing values:\n")
+cat("Rows with NA: ", nrow(ecommerce_tidy[!complete.cases(ecommerce_tidy),]), "\n")
+
+cat("\nUnique values:\n")
+cat("Product categories: ", paste(unique(ecommerce_tidy$product_category), collapse = ", "), "\n")
+cat("Return statuses: ", paste(unique(ecommerce_tidy$return_status), collapse = ", "), "\n")
+cat("Sales channels: ", paste(unique(ecommerce_tidy$sales_channel), collapse = ", "), "\n")
+
+cat("\nTotal transactions: ", sum(ecommerce_tidy$transaction_count), "\n")
+```
+
+---
+
+## Analytical Methods
+
+### Overall Return Rate by Product Category
+
+I calculate the percentage of returned items for each product category across all sales channels:
+
+```{r ecommerce-overall-analysis}
+ecommerce_overall <- ecommerce_tidy %>%
+  group_by(product_category, return_status) %>%
+  summarise(total = sum(transaction_count), .groups = "drop") %>%
+  group_by(product_category) %>%
+  mutate(
+    grand_total = sum(total),
+    pct = round(100 * total / grand_total, 2)
+  ) %>%
+  filter(return_status == "returned") %>%
+  select(product_category, returned_count = total, total_transactions = grand_total, return_pct = pct)
+
+knitr::kable(ecommerce_overall,
+             caption = "Table 14: Overall Return Rate by Product Category")
+```
+
+### Return Rate by Product Category and Sales Channel
+
+```{r ecommerce-channel-analysis}
+ecommerce_by_channel <- ecommerce_tidy %>%
+  group_by(product_category, sales_channel) %>%
+  mutate(channel_total = sum(transaction_count)) %>%
+  filter(return_status == "returned") %>%
+  mutate(return_pct = round(100 * transaction_count / channel_total, 2)) %>%
+  select(product_category, sales_channel, returned = transaction_count, channel_total, return_pct) %>%
+  arrange(product_category, sales_channel)
+
+knitr::kable(ecommerce_by_channel,
+             caption = "Table 15: Return Rate by Product Category and Sales Channel")
+```
+
+---
+
+## Visualizations
+
+### Overall Return Rate by Product Category
+
+```{r ecommerce-viz-overall}
+ggplot(ecommerce_overall, aes(x = product_category, y = return_pct, fill = product_category)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = paste0(return_pct, "%")), vjust = -0.5, size = 4, fontface = "bold") +
+  scale_fill_manual(values = c(
+    "clothing" = "#FF7F00",
+    "electronics" = "#377EB8",
+    "home & garden" = "#4DAF4A",
+    "sports equipment" = "#E41A1C"
+  )) +
+  labs(
+    title = "Overall Return Rate by Product Category",
+    x = "Product Category", 
+    y = "Return Rate (%)",
+    caption = "Source: E-commerce transaction data"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ylim(0, 15)
+```
+
+### Return Rate by Product Category and Sales Channel
+
+```{r ecommerce-viz-channel}
+ggplot(ecommerce_by_channel, aes(x = sales_channel, y = return_pct, fill = product_category)) +
+  geom_col(position = "dodge") +
+  geom_text(aes(label = paste0(return_pct, "%")),
+            position = position_dodge(width = 0.9), vjust = -0.3, size = 2.5) +
+  scale_fill_manual(values = c(
+    "clothing" = "#FF7F00",
+    "electronics" = "#377EB8",
+    "home & garden" = "#4DAF4A",
+    "sports equipment" = "#E41A1C"
+  )) +
+  labs(
+    title = "Return Rate by Product Category and Sales Channel",
+    x = "Sales Channel", 
+    y = "Return Rate (%)",
+    fill = "Category",
+    caption = "Source: E-commerce transaction data"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  )
+```
+
+
+
