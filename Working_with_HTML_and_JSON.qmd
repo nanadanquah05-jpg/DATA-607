@@ -1,0 +1,253 @@
+---
+title: "Assignment — Working with HTML and JSON"
+author: "Nana Kwasi Danquah"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: flatly
+execute:
+  echo: true
+  warning: false
+---
+
+## Approach
+
+### Subject and Book Selection
+
+The subject chosen is **Science Fiction**. These books have clean, consistent
+metadata that works well in both an HTML table and a JSON file.
+
+The three books are:
+
+1. **Dune** by Frank Herbert, published in 1965 by Chilton Books
+2. **The Long War** by Terry Pratchett and Stephen Baxter, published in 2013 by Harper Collins — this is the multi-author book
+3. **Neuromancer** by William Gibson, published in 1984 by Ace Books
+
+Each book is recorded with five attributes: title, authors, year, publisher,
+and ISBN. The authors field stores one or more names as a single
+comma-separated string so the table structure stays consistent across all
+three rows.
+
+---
+
+### Creating the Data Files
+
+**books.html**
+
+The HTML file is written by hand. It has a simple table with a header row
+and three data rows, one per book. The five column headers match the five
+attributes listed above. A small amount of CSS is added to make the table
+easier to read, but there is no JavaScript and no external libraries — just
+plain HTML. The file is hosted on GitHub so R can fetch it by URL.
+
+**books.json**
+
+The JSON file is also written by hand. It is an array of three objects where
+each object has the same five keys as the HTML table columns. The year field
+is stored as a number rather than a string because JSON supports that
+natively. Everything else is stored as a string. The file lives in the same
+GitHub repository as the HTML file.
+
+---
+
+## The Data Files
+
+### books.html
+
+Below is the raw HTML written by hand. The table has five columns and three
+data rows. The structure is intentionally simple so the focus stays on the
+data rather than the formatting.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Science Fiction Books</title>
+</head>
+<body>
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Authors</th>
+        <th>Year</th>
+        <th>Publisher</th>
+        <th>ISBN</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Dune</td>
+        <td>Frank Herbert</td>
+        <td>1965</td>
+        <td>Chilton Books</td>
+        <td>978-0-441-17271-9</td>
+      </tr>
+      <tr>
+        <td>The Long War</td>
+        <td>Terry Pratchett, Stephen Baxter</td>
+        <td>2013</td>
+        <td>Harper Collins</td>
+        <td>978-0-06-206726-8</td>
+      </tr>
+      <tr>
+        <td>Neuromancer</td>
+        <td>William Gibson</td>
+        <td>1984</td>
+        <td>Ace Books</td>
+        <td>978-0-441-56956-4</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
+```
+
+### books.json
+
+Below is the raw JSON written by hand. Year is stored as a number. Every
+other field is a string. The key names are lowercase to match what R expects
+after cleaning the HTML column headers.
+
+```json
+[
+  {
+    "title": "Dune",
+    "authors": "Frank Herbert",
+    "year": 1965,
+    "publisher": "Chilton Books",
+    "isbn": "978-0-441-17271-9"
+  },
+  {
+    "title": "The Long War",
+    "authors": "Terry Pratchett, Stephen Baxter",
+    "year": 2013,
+    "publisher": "Harper Collins",
+    "isbn": "978-0-06-206726-8"
+  },
+  {
+    "title": "Neuromancer",
+    "authors": "William Gibson",
+    "year": 1984,
+    "publisher": "Ace Books",
+    "isbn": "978-0-441-56956-4"
+  }
+]
+```
+
+---
+
+## Loading and Comparing the Data
+
+### Step 1 — Load the HTML File
+
+The `rvest` package is used to read the HTML file. `read_html` fetches the
+page from GitHub, `html_element` finds the table, and `html_table` converts
+it into a data frame. Column names are lowercased to make them consistent.
+The year column comes in as character because `html_table` reads every cell
+as text, so it is converted to integer right away.
+
+```{r}
+#| label: load-html
+#| message: false
+
+library(rvest)
+library(dplyr)
+
+html_url <- "https://raw.githubusercontent.com/nanadanquah05-jpg/DATA-607/refs/heads/main/books.html"
+
+df_html <- read_html(html_url) |>
+  html_element("table") |>
+  html_table()
+
+colnames(df_html) <- tolower(colnames(df_html))
+
+df_html$year <- as.integer(df_html$year)
+
+df_html
+```
+
+### Step 2 — Load the JSON File
+
+The `jsonlite` package reads the JSON file. `fromJSON` parses the array
+directly into a data frame. The year field is already an integer because
+JSON stores it as a number, so no conversion is needed there.
+
+```{r}
+#| label: load-json
+#| message: false
+
+library(jsonlite)
+
+json_url <- "https://raw.githubusercontent.com/nanadanquah05-jpg/DATA-607/refs/heads/main/books.json"
+
+df_json <- fromJSON(json_url)
+
+colnames(df_json) <- tolower(colnames(df_json))
+
+df_json
+```
+
+### Step 3 — Compare the Two Data Frames
+
+The comparison is done in two ways. First, a column-level summary shows the
+data type from each source and whether the values match row for row. Second,
+`identical` is called on both data frames and the result is printed as a
+plain message.
+
+```{r}
+#| label: compare
+
+# Align column order to match the HTML data frame
+df_json <- df_json[, colnames(df_html)]
+
+# Column-level summary
+comparison <- data.frame(
+  column       = colnames(df_html),
+  html_type    = sapply(df_html, class),
+  json_type    = sapply(df_json, class),
+  values_match = mapply(function(a, b) all(a == b), df_html, df_json)
+)
+
+comparison
+```
+
+```{r}
+#| label: identical-check
+
+result <- identical(df_html, df_json)
+
+if (result) {
+  cat("The two data frames are identical.\n")
+} else {
+  cat("The two data frames are not identical.\n")
+}
+```
+
+---
+
+## Conclusion
+
+Both files carry exactly the same information and the comparison confirms
+they are identical after the year column in the HTML data frame is converted
+to integer.
+
+The main practical difference between the two formats is how they handle
+data types. JSON can express numbers as numbers, so year arrives in R already
+typed correctly. HTML has no type system — everything in a table cell is
+text, so the type has to be assigned manually after loading.
+
+In terms of structure, HTML is more verbose because the data is wrapped in
+tags that describe how it should be displayed. JSON is more compact and
+closer to how data is actually stored and exchanged between systems. For
+loading data into R, JSON is simpler because `fromJSON` handles almost
+everything automatically. With HTML, a bit more cleanup is needed after the
+table is extracted.
+
+Both formats are worth knowing. HTML tables appear all over the web and
+being able to pull them into R with `rvest` is a practical skill. JSON is
+the standard format for most web APIs, so `jsonlite` comes up constantly in
+real data work.
