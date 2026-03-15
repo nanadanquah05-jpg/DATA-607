@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Dune",
+    "authors": "Frank Herbert",
+    "year": 1965,
+    "publisher": "Chilton Books",
+    "isbn": "978-0-441-17271-9"
+  },
+  {
+    "title": "The Long War",
+    "authors": "Terry Pratchett, Stephen Baxter",
+    "year": 2013,
+    "publisher": "Harper Collins",
+    "isbn": "978-0-06-206726-8"
+  },
+  {
+    "title": "Neuromancer",
+    "authors": "William Gibson",
+    "year": 1984,
+    "publisher": "Ace Books",
+    "isbn": "978-0-441-56956-4"
+  }
+]
