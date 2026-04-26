@@ -1,0 +1,267 @@
+---
+title: "Reverse Engineering Spotify's Recommendation Engine"
+subtitle: "A Scenario Design & Systems Analysis"
+author: "Nana Kwasi Danquah"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    self-contained: true
+---
+
+## Introduction
+
+Spotify is one of the world's most sophisticated consumer-facing recommender systems, serving over 600 million users across more than 180 markets. Unlike e-commerce recommendation engines — where the primary signal is purchase history — Spotify must infer preference from *listening behavior*: streams, skips, replays, playlist additions, and saves. Its recommender infrastructure powers flagship features including **Discover Weekly**, **Daily Mixes**, **Radio**, **Release Radar**, and the annual **Wrapped** summary.
+
+This report performs a **Scenario Design analysis** of Spotify's recommendation system from two perspectives (the organization and its users), reverse-engineers the system's likely architecture from publicly available disclosures and observable interface behavior, and proposes concrete improvements.
+
+The analysis draws on two landmark papers:
+
+- **Linden, Smith & York (2003)**, *Amazon.com Recommendations: Item-to-Item Collaborative Filtering* (IEEE Internet Computing) — which showed how Amazon scaled personalization by computing item-to-item similarity offline rather than matching users to users in real time.
+- **Spangher (2015)**, *Building the Next New York Times Recommendation Engine* — which showed how the NYT evolved from pure keyword-tag content filtering through standard collaborative filtering to a hybrid **Collaborative Topic Modeling (CTM)** approach, and highlighted the difficulty of inferring true preference from noisy click signals.
+
+Both papers inform the architecture analysis and the critique of Spotify's current approach.
+
+---
+
+## Scenario Design Analysis
+
+Scenario Design (Temkin, 2004) is a three-question UX framework that reorients system design from *"What functionality should we offer?"* to *"What user goals should we serve?"* The three questions are:
+
+1. **Who are the target users?**
+2. **What are their goals?**
+3. **How should the system meet those goals?**
+
+Because Spotify serves two distinct principals — the **platform itself** and **listeners** — I perform the analysis twice, once per principal.
+
+---
+
+### Scenario Design: Spotify as an Organization
+
+#### Who are Spotify's target "users" internally?
+
+Spotify's internal stakeholders include its product and engineering teams, its music label and podcast partners, and its advertising and subscription revenue units. The recommendation system must simultaneously serve all three.
+
+#### What are Spotify's organizational goals?
+
+- **Maximize listening time.** More time on platform translates directly to more ad impressions on the free tier and lower churn on the paid tier.
+- **Reduce per-stream royalty costs.** Spotify pays rights holders on a per-stream basis. Surfacing catalog content — older, lower-marginal-cost tracks — reduces total licensing expense relative to surfacing only chart-topping new releases.
+- **Grow Premium subscriptions.** Features like Discover Weekly are gated behind Premium, creating upgrade incentives.
+- **Surface emerging artists.** Discovering artists before they are mainstream gives Spotify leverage in licensing negotiations and differentiates the platform from radio.
+- **Minimize skip rates.** High skip rates signal recommendation failure and increase infrastructure costs.
+
+#### How should the system meet those goals?
+
+- Optimize for **session depth** (tracks listened through before exit), not just next-song click-through rate.
+- Blend **popular content** with **long-tail catalog** to reduce licensing pressure while maintaining engagement.
+- Gate sophisticated personalization behind the **Premium paywall** to drive upgrades.
+- Use **contextual awareness** — time of day, device type, recent session pattern — to surface music that enables uninterrupted listening.
+
+---
+
+### Scenario Design: Spotify Listeners
+
+#### Who are Spotify's listeners?
+
+Spotify's listener base is unusually diverse:
+
+| Segment | Characteristics |
+|---|---|
+| **Casual / background listeners** | Want effortless, genre-appropriate streams with no curation effort |
+| **Active music fans** | Follow artists, build playlists, seek new releases |
+| **Mood / activity listeners** | Choose music by context: gym, studying, commuting, cooking |
+| **Discovery seekers** | Explicitly want to find new artists and genres |
+| **Nostalgia / comfort listeners** | Prefer familiar catalog; resist unfamiliar recommendations |
+| **Podcast consumers** | Behaviorally distinct from music listeners; topic-driven, binge-stop patterns |
+
+#### What are listeners' goals?
+
+- **Effortless continuity**: "Play something I'll like right now without me having to think."
+- **Mood matching**: "Give me music that fits what I'm doing."
+- **Controlled discovery**: "Surprise me — but not too much."
+- **Artist loyalty**: "Show me what's new from artists I already love."
+- **Taste reflection**: "Show me that you understand who I am as a listener."
+
+This tension between discovery and comfort is structurally identical to the tension Spangher (2015) identified at the NYT: readers say they want to be challenged and exposed to new topics, but behavioral data shows they consistently click familiar, comfortable content. Spotify faces the same gap between *stated* preference and *revealed* preference. The NYT's "back-off" solution — crediting 10% preference weight to articles a reader did *not* click — was designed to produce more "serendipitous" recommendations by not over-inferring from positive signals alone. An analogous approach is directly applicable to Spotify.
+
+#### How should the system meet listener goals?
+
+- Use exploration aggressively during **low-stakes background sessions** and rely on known preferences during high-engagement sessions.
+- Provide **transparent preference controls** so listeners can tune how much discovery vs. familiarity they want.
+- Respect **contextual signals** without requiring explicit mode-setting from the user.
+- Actively guard against **taste calcification** — the feedback loop where only existing preferences are reinforced, narrowing the listener's world over time.
+
+---
+
+## Reverse Engineering Spotify's Recommendation Architecture
+
+### What Spotify Has Publicly Disclosed
+
+Spotify's engineering blog, research papers, and the Echo Nest API provide partial visibility into the stack.
+
+**Collaborative Filtering via Weighted Matrix Factorization (WMF)**
+
+Spotify uses matrix factorization to learn latent embeddings for users and tracks from implicit feedback (streams, saves, skips). This applies exactly the scalability insight from Linden et al. (2003): rather than comparing users to each other in real time — which the authors characterized as O(M + N) and "impractical on large data sets" — Spotify precomputes item and user embeddings offline. The offline-computed similar-items table in Amazon's system corresponds to Spotify's precomputed track embedding index. As Linden et al. put it: "the key to item-to-item collaborative filtering's scalability and performance is that it creates the expensive similar-items table offline."
+
+**Natural Language Processing on Web Text**
+
+Spotify's 2014 acquisition of The Echo Nest brought a corpus of web-scraped text about artists and tracks: blog posts, reviews, social media commentary. Spotify processes this text to extract cultural and mood tags ("melancholy," "hyperpop," "workout banger"). This mirrors the NYT's content modeling step: Spangher (2015) used **Latent Dirichlet Allocation (LDA)** to model each article as a mixture of latent topics derived from its text, noting that "LDA topics tend to be broad (some examples are Middle East, Film and Healthcare), which allows us to relate pieces from differing viewpoints." Spotify applies similar topic modeling to characterize tracks and artists from external text.
+
+**Audio Feature Extraction via Deep Learning (Content-Based Filtering)**
+
+For tracks with no listening history — the classic **cold start problem** — Spotify uses a convolutional neural network trained on mel-spectrograms to extract audio features: tempo, energy, valence (emotional positivity), danceability, acousticness, and instrumentalness. These features are surfaced in Spotify's public Web API.
+
+Both source papers acknowledged the cold start problem. Amazon noted that "new customers typically have extremely limited information, based on only a few purchases or product ratings." Spangher observed that collaborative filtering "fails at recommending newly-published, unexplored articles: articles that were relevant to groups of readers but hadn't yet been read by any reader in that group." Content features — audio for Spotify, keyword tags and LDA topics for the NYT — are the standard mitigation for both platforms.
+
+**Reinforcement Learning for Sequential Recommendation**
+
+Spotify's research (post-2020) has introduced reinforcement learning (RL) frameworks that treat a listening session as a trajectory and optimize for long-horizon reward — session completion rate — rather than just next-track accuracy. This is a significant advance over both the Amazon item-to-item model (which recommends a set of items, not a sequence) and standard collaborative filtering.
+
+**Graph Neural Networks**
+
+More recent Spotify research explores heterogeneous graphs where users, tracks, artists, albums, and playlists are nodes. Edges encode relationships: listened-to, saved, followed, co-appeared-in-playlist. Graph neural networks propagate information across edges to capture higher-order preference relationships that matrix factorization alone cannot represent.
+
+---
+
+### Inferred System Architecture
+
+Based on public disclosures and observable behavior, Spotify's pipeline likely follows a two-stage **retrieve-then-rank** architecture:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                     OFFLINE STAGE                            ║
+║                                                              ║
+║  1. Collect implicit feedback (streams, skips, saves,        ║
+║     playlist additions, search queries)                      ║
+║  2. Train Weighted Matrix Factorization → user & track       ║
+║     embeddings in shared latent space                        ║
+║  3. Extract audio features via CNN (cold start coverage)     ║
+║  4. Run NLP on web text → cultural/mood tags per artist      ║
+║  5. Build heterogeneous graph; train GNN embeddings          ║
+║  6. Precompute Approximate Nearest Neighbor index            ║
+║     (e.g., FAISS) over track embedding space                 ║
+╚══════════════════════════════════════════════════════════════╝
+                              │
+                              ▼
+╔══════════════════════════════════════════════════════════════╗
+║                   ONLINE STAGE (< 200ms)                     ║
+║                                                              ║
+║  1. Retrieve user embedding + real-time context signals      ║
+║     (device, time of day, recent skips in current session)   ║
+║  2. ANN lookup → candidate set (~500–2000 tracks)            ║
+║  3. Re-ranking model (gradient boosted trees or neural net)  ║
+║     Features: freshness, diversity, skip history,            ║
+║     session context, device type, explicit content prefs     ║
+║  4. Business rule filters (geo licensing, new-release        ║
+║     boost, explicit content toggle)                          ║
+║  5. Final ranked list → served to user                       ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+### Behavioral Clues from the Interface
+
+Several observable behaviors provide evidence for this architecture:
+
+| Observed Behavior | Most Likely Explanation |
+|---|---|
+| Discover Weekly resets every Monday | Weekly batch recomputation cycle |
+| Radio adapts mid-session after repeated skips | Real-time re-ranking using skip as negative signal |
+| Recommendations differ between mobile and desktop | Device type is a contextual feature in the re-ranker |
+| Time-of-day themed playlists (Morning Coffee, etc.) | Time of day is a retrieval or re-ranking feature |
+| "Fans Also Like" on artist pages | Nearest-neighbor lookup in artist embedding space |
+| Discover Weekly tracks rarely repeat across weeks | Novelty constraint at the business-rule layer |
+| New user receives genre-based defaults | Cold start fallback: audio features + NLP tags |
+
+---
+
+## Known Weaknesses and Failure Modes
+
+### Taste Calcification / Filter Bubble
+
+Like the NYT system, which Spangher (2015) warned could "cluster reading patterns in narrow viewpoints," Spotify's behavioral feedback loop risks calcifying listener taste. A user who listened heavily to sad music during a difficult period may continue receiving that content long after the mood has shifted, because the system cannot distinguish *durable preference* from *situational behavior*.
+
+The NYT's back-off approach — described by Spangher as treating a reader's preferences as "only '90% like' the articles you read, and '10% like' the ones you didn't" — was designed to prevent exactly this. Spotify has no equivalent mechanism currently visible to users.
+
+### Cold Start Structurally Disadvantages Independent Artists
+
+Audio feature extraction helps for new tracks, but tracks with no listening history still underperform in collaborative filtering relative to their actual quality. Major-label artists benefit from paid playlist placement that generates co-listening signals, compounding their algorithmic advantage. Amazon acknowledged this dimension of the cold start problem in 2003; at Spotify's scale — over 100 million tracks — the structural inequity is more acute.
+
+### Evaluation Metric Mismatch
+
+Spotify almost certainly optimizes primarily for **skip rate** and **session length**. But these metrics can be satisfied by surfacing safe, familiar content rather than genuinely well-matched discoveries. Spangher (2015) made an identical observation about click-based optimization at the NYT: "Clicks are, after all, not robust: I'm sure that at some point, you have clicked on something you didn't enjoy and missed something you would have found interesting." Optimizing for engagement proxies does not guarantee genuine listener satisfaction.
+
+### Cross-Domain Signal Interference (Music + Podcasts)
+
+Spotify's major investment in podcast content has not been fully integrated into its recommendation graph. Podcast listening behavior — topic-driven, binge-stop — is fundamentally different from music listening — mood-driven, continuous. Naive signal blending risks degrading recommendation quality in both domains.
+
+---
+
+## Recommendations for Improvement
+
+### 1. User-Adjustable Discovery Control
+
+**Problem**: Users have no mechanism to signal "I want more exploration" or "break me out of this rut."
+
+**Recommendation**: Introduce a persistent **Discovery Dial** — a slider from "Familiar" to "Adventurous" — that modulates the exploration parameter at the retrieval stage. This directly addresses the tension Spangher (2015) identified between stated desire for discovery and revealed preference for comfort. Making the tradeoff explicit and user-controlled is more respectful of listener autonomy than having the algorithm decide silently.
+
+### 2. Back-Off Prior to Reduce Taste Calcification
+
+**Problem**: The system over-indexes on tracks that were streamed, even when those streams were situational.
+
+**Recommendation**: Adopt an approach analogous to the NYT's back-off method: apply a decay weight to passive background streams and credit a small positive weight to tracks skipped quickly, treating rapid skips as partial negative signals rather than ignoring them. This prevents the taste profile from collapsing entirely around a recent high-intensity listening period, producing what Spangher described as more "serendipitous" recommendations.
+
+### 3. Diversity-Aware Re-Ranking
+
+**Problem**: Nearest-neighbor retrieval clusters recommendations around the user's modal taste, producing within-genre monotony even when individual tracks are technically novel.
+
+**Recommendation**: Apply **Maximal Marginal Relevance (MMR)** diversification at the re-ranking stage, penalizing candidates that are too similar to tracks already selected for the session. Amazon's item-to-item method was similarly critiqued for producing homogeneous recommendation sets; MMR-style diversification maintains relevance while widening session coverage.
+
+### 4. Temporal Signal Decay
+
+**Problem**: Older behavioral signals carry comparable weight to recent ones, so a listening binge from two years ago still shapes today's recommendations.
+
+**Recommendation**: Apply **exponential temporal decay** with different constants per signal type. Saves and playlist additions (durable preference) decay slowly. Passive streams in anomalous sessions decay quickly. This preserves long-term taste signals while reducing the influence of situational listening.
+
+### 5. Audio-Quality Cold Start Boost for Independent Artists
+
+**Problem**: Collaborative filtering structurally disadvantages new and independent artists who lack the co-listening history accumulated by major-label artists through paid placement.
+
+**Recommendation**: Introduce an **audio-quality-adjusted cold start boost** for tracks below a streaming threshold that score highly on content-based similarity to a user's existing preferences. This is analogous to the NYT's editorial curation layer — an intentional override of pure behavioral optimization to surface quality content the algorithm would otherwise suppress. Linden et al. (2003) noted that purely behavioral algorithms fail to recommend items that "have no common customers"; an explicit intervention prevents quality tracks from remaining permanently invisible.
+
+### 6. Cross-Domain Embeddings for Music-Podcast Integration
+
+**Problem**: Music and podcast signals are currently siloed, missing potential cross-domain preference signals (e.g., ambient electronic music listeners who also engage heavily with meditation podcasts).
+
+**Recommendation**: Train a **cross-domain embedding model** that maps high-level interest clusters spanning music genres and podcast topics. Apply cross-domain signals sparingly — only as a diversification supplement during low-confidence scenarios — to avoid polluting music recommendations with irrelevant podcast content. This mirrors the NYT's CTM approach of blending content signals with behavioral signals in a principled, weighted hybrid rather than treating them as entirely separate models.
+
+---
+
+## Conclusion
+
+Spotify's recommendation system represents the current state of the art in consumer audio recommendation: a multi-stage pipeline combining matrix factorization, deep audio feature extraction, NLP-derived cultural tags, and reinforcement learning for sequential optimization. It applies the core scalability lesson of Linden et al. (2003) — perform expensive computations offline, serve results in real time — at an order of magnitude greater scale. And it faces the same fundamental challenge Spangher (2015) documented at the NYT: optimizing for measurable engagement proxies does not guarantee that the system is genuinely serving users well.
+
+Both the NYT's CTM hybrid and Amazon's offline-precomputed similarity table were responses to the failure modes of naive, single-method approaches. Spotify's next evolution — better user controls, temporal signal decay, principled diversification, and fairer treatment of independent artists — is the next layer of that same ongoing engineering challenge.
+
+---
+
+## References
+
+Linden, G., Smith, B., & York, J. (2003). Amazon.com recommendations: Item-to-item collaborative filtering. *IEEE Internet Computing*, 7(1), 76–80.
+
+Spangher, A. (2015, August 11). Building the next New York Times recommendation engine. *The New York Times Open Blog*. http://open.blogs.nytimes.com/2015/08/11/building-the-next-new-york-times-recommendation-engine/
+
+Temkin, B. D. (2004). *Scenario design: A disciplined approach to customer experience*. Forrester Research.
+
+Blei, D. M., Ng, A. Y., & Jordan, M. I. (2003). Latent Dirichlet allocation. *Journal of Machine Learning Research*, 3, 993–1022.
+
+Wang, C., & Blei, D. M. (2011). Collaborative topic modeling for recommending scientific articles. *Proceedings of the 17th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 448–456.
+
+Schedl, M. (2019). Deep learning in music recommendation systems. *Frontiers in Applied Mathematics and Statistics*, 5, 44.
+
+Spotify Engineering. (2021). *Recommending what to play next*. Spotify Engineering Blog. https://engineering.atspotify.com
