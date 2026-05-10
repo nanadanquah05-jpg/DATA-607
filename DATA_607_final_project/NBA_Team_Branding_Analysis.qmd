@@ -1,0 +1,401 @@
+---
+title: "NBA Team Branding Analysis"
+subtitle: "Analyzing Team Branding Language and Its Relationship to Performance, Attendance, and Fan Engagement"
+author: "Nana Kwasi Danquah"
+date: today
+format:
+  html:
+    toc: true
+    theme: cosmo
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+## Introduction
+
+NBA teams use words like **"dynasty," "contender," "young core,"** and **"rebuilding"** to describe themselves. As someone who watches a lot of NBA basketball, I wanted to know: do these words actually mean anything? Do teams that call themselves contenders actually win more? Do fans show up more for those teams?
+
+In this project, I looked at all 30 NBA teams and checked whether the language they use in their branding is connected to:
+
+- How many games they win
+- How many fans attend their games
+- How many social media followers they have
+
+### My Data Science Workflow (OSEMN)
+
+I followed the OSEMN workflow for this project:
+
+1. **Obtain** — I pulled data from two sources: Basketball Reference (web scrape) and my own CSV files
+2. **Scrub** — I cleaned column names, removed nulls, and reshaped the data
+3. **Explore** — I ran descriptive stats and created visualizations
+4. **Model** — I ran an ANOVA test and a linear regression
+5. **iNterpret** — I drew conclusions and noted the limitations of my analysis
+
+---
+
+## Step 1: Load the Libraries
+
+Here I load all the R packages I need. Each one does a specific job.
+
+```{r}
+library(tidyverse)   # data cleaning and wrangling
+library(rvest)       # web scraping
+library(ggplot2)     # charts
+library(ggrepel)     # smart text labels on charts (feature not covered in class)
+library(knitr)       # tables
+library(scales)      # number formatting
+library(broom)       # clean model output
+library(wordcloud2)  # word cloud (feature not covered in class)
+```
+
+---
+
+## Step 2: Obtaining My Data — Two Different Source Types
+
+I used two different types of data sources for this project:
+
+1. **Web scrape** — I pulled live NBA standings directly from Basketball Reference using `rvest`
+2. **CSV files** — I collected data on team descriptions, attendance, social media, and market size and stored them as CSV files
+
+### Source 1: Web Scrape (Basketball Reference)
+
+```{r}
+# I scraped the 2023-24 NBA standings from Basketball Reference
+url <- "https://www.basketball-reference.com/leagues/NBA_2024_standings.html"
+
+scraped <- read_html(url) |>
+  html_element("#confs_standings_E") |>   # grab the Eastern Conference table
+  html_table()
+
+# Clean up the scraped table
+scraped_clean <- scraped |>
+  janitor::clean_names() |>
+  select(team = eastern_conference, w, l) |>
+  filter(!str_detect(team, "Atlantic|Central|Southeast")) |>  # remove division headers
+  mutate(
+    team    = str_remove(team, "\\*"),   # remove asterisks from playoff teams
+    win_pct = w / (w + l)               # calculate win percentage
+  )
+
+head(scraped_clean)
+```
+
+> **Challenge I ran into:** Basketball Reference puts an asterisk (`*`) next to playoff teams. When I first tried to join this data with my other files, the team names didn't match because of that extra character. I fixed it by using `str_remove()` to strip the asterisk out before doing the join.
+
+### Source 2: My CSV Files
+
+```{r}
+# I load my pre-collected CSV files here
+teams      <- read_csv("team_descriptions.csv")
+attendance <- read_csv("nba_attendance.csv")
+social     <- read_csv("social_media.csv")
+market     <- read_csv("market_size.csv")
+
+head(teams)
+```
+
+---
+
+## Step 3: Cleaning and Transforming the Data
+
+### Wide to Long Transformation
+
+My social media file had separate columns for Instagram and Twitter followers. I reshaped it from **wide format** (one column per platform) to **long format** (one row per platform) so I could plot both platforms side by side easily.
+
+```{r}
+# Before: each platform is its own column
+head(social)
+
+# I transform it to long format
+social_long <- social |>
+  pivot_longer(
+    cols      = c(instagram_followers_m, twitter_followers_m),
+    names_to  = "platform",
+    values_to = "followers_m"
+  ) |>
+  mutate(platform = str_replace(platform, "_followers_m", "") |>
+                    str_replace("instagram", "Instagram") |>
+                    str_replace("twitter", "Twitter/X"))
+
+head(social_long)
+```
+
+---
+
+## Step 4: Categorizing Teams by Their Branding Language
+
+I read each team's description and counted how many times certain keywords appeared. I then assigned each team to whichever category had the most keyword matches.
+
+| Group | What it means | Example words |
+|-------|--------------|---------------|
+| Elite / Contender | Team is going for a title | dynasty, championship, elite |
+| Young / Building | Team is growing | young, future, developing |
+| Rebuilding | Team is starting over | rebuilding, reset, transition |
+| Veteran / Proven | Team relies on experience | veteran, proven, battle-tested |
+
+```{r}
+# I define the keywords for each group
+elite_words   <- c("dynasty", "contender", "championship", "title", "elite", "dominant")
+young_words   <- c("young", "future", "developing", "emerging", "next generation")
+rebuild_words <- c("rebuilding", "retooling", "reset", "transition")
+veteran_words <- c("experienced", "veteran", "proven", "battle-tested")
+
+# This function counts how many keywords from a list appear in a description
+count_matches <- function(text, words) {
+  str_count(str_to_lower(text), str_c(words, collapse = "|"))
+}
+
+# I score each team and assign it a category
+teams <- teams |>
+  mutate(
+    score_elite   = map_int(description, ~count_matches(.x, elite_words)),
+    score_young   = map_int(description, ~count_matches(.x, young_words)),
+    score_rebuild = map_int(description, ~count_matches(.x, rebuild_words)),
+    score_veteran = map_int(description, ~count_matches(.x, veteran_words)),
+    category = pmap_chr(
+      list(score_elite, score_young, score_rebuild, score_veteran),
+      ~c("Elite/Contender", "Young/Building",
+         "Rebuilding", "Veteran/Proven")[which.max(c(...))]
+    )
+  )
+
+# Here I check how many teams ended up in each group
+teams |>
+  count(category) |>
+  kable(col.names = c("Branding Category", "Number of Teams"))
+```
+
+---
+
+## Step 5: Combining All My Data Into One Table
+
+I joined all five data sources into one master table so I could compare everything at once.
+
+```{r}
+df <- teams |>
+  left_join(scraped_clean, by = "team") |>   # web-scraped standings
+  left_join(attendance,    by = "team") |>
+  left_join(social,        by = "team") |>
+  left_join(market,        by = "team")
+
+glimpse(df)
+```
+
+---
+
+## Step 6: Exploring the Data — Descriptive Statistics
+
+Before running any tests, I looked at the basic averages for each group.
+
+```{r}
+df |>
+  group_by(category) |>
+  summarise(
+    Teams            = n(),
+    `Avg Win %`      = percent(mean(win_pct,           na.rm = TRUE), accuracy = 0.1),
+    `Avg Attendance` = comma(round(mean(avg_attendance, na.rm = TRUE))),
+    `Avg Followers`  = paste0(round(mean(total_followers, na.rm = TRUE), 1), "M")
+  ) |>
+  kable(caption = "My summary statistics by branding category")
+```
+
+---
+
+## Step 7: My Visualizations
+
+### Chart 1 — Win % by Branding Category
+
+I made this bar chart to see at a glance which branding group wins the most games on average.
+
+```{r}
+category_colors <- c(
+  "Elite/Contender" = "#C9A84C",
+  "Veteran/Proven"  = "#1D428A",
+  "Young/Building"  = "#27AE60",
+  "Rebuilding"      = "#C8102E"
+)
+
+win_summary <- df |>
+  group_by(category) |>
+  summarise(avg_win_pct = mean(win_pct, na.rm = TRUE))
+
+ggplot(win_summary, aes(x = reorder(category, avg_win_pct),
+                        y = avg_win_pct, fill = category)) +
+  geom_col(show.legend = FALSE, width = 0.6) +
+  scale_fill_manual(values = category_colors) +
+  scale_y_continuous(labels = percent_format()) +
+  coord_flip() +
+  labs(title    = "Average Win % by Branding Category",
+       subtitle = "NBA seasons 2019–2024",
+       x = NULL, y = "Win Percentage") +
+  theme_minimal(base_size = 13)
+```
+
+### Chart 2 — Attendance by Branding Category
+
+I wanted to see if fans show up more for teams that use "elite" language.
+
+```{r}
+attend_summary <- df |>
+  group_by(category) |>
+  summarise(avg_attendance = mean(avg_attendance, na.rm = TRUE))
+
+ggplot(attend_summary, aes(x = reorder(category, avg_attendance),
+                           y = avg_attendance, fill = category)) +
+  geom_col(show.legend = FALSE, width = 0.6) +
+  scale_fill_manual(values = category_colors) +
+  scale_y_continuous(labels = comma_format()) +
+  coord_flip() +
+  labs(title    = "Average Home Attendance by Branding Category",
+       subtitle = "Excludes 2020–21 bubble season",
+       x = NULL, y = "Average Fans per Game") +
+  theme_minimal(base_size = 13)
+```
+
+### Chart 3 — Instagram vs. Twitter Followers by Category
+
+Here I used my reshaped long-format data to compare Instagram and Twitter followers side by side across branding categories.
+
+```{r}
+social_long |>
+  left_join(select(teams, team, category), by = "team") |>
+  group_by(category, platform) |>
+  summarise(avg_followers = mean(followers_m, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = category, y = avg_followers, fill = platform)) +
+  geom_col(position = "dodge", width = 0.6) +
+  scale_fill_manual(values = c("Instagram" = "#C9A84C", "Twitter/X" = "#1D428A")) +
+  labs(title    = "My Followers Comparison by Category and Platform",
+       subtitle = "Instagram vs. Twitter/X (millions)",
+       x = NULL, y = "Avg Followers (M)", fill = "Platform") +
+  theme_minimal(base_size = 13)
+```
+
+### Chart 4 — Scatter Plot with Team Labels Using ggrepel
+
+I used `ggrepel` here — a package I discovered on my own that was not covered in class. It automatically moves the team name labels so they do not overlap each other, which makes the chart much easier to read.
+
+```{r}
+ggplot(df, aes(x = score_elite, y = win_pct,
+               color = category, label = team)) +
+  geom_point(size = 3) +
+  geom_text_repel(size = 2.8, max.overlaps = 20) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "grey50", linetype = "dashed") +
+  scale_color_manual(values = category_colors) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(title    = "Elite Keyword Score vs. Win Percentage",
+       subtitle = "Each dot is one NBA team",
+       x = "Elite Keyword Count", y = "Win %",
+       color = "Category") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom")
+```
+
+### Chart 5 — Word Cloud of Elite/Contender Team Descriptions
+
+I also used `wordcloud2` — another package not covered in class — to visualize the most common words used by Elite/Contender teams. The bigger the word, the more often it appeared in their descriptions.
+
+```{r}
+stop_words_list <- c("the", "a", "an", "and", "or", "is", "are", "of",
+                     "to", "in", "with", "their", "they", "has", "have",
+                     "for", "on", "as", "its", "this", "that", "after",
+                     "be", "been", "by", "from", "at", "team", "nba")
+
+word_freq <- df |>
+  filter(category == "Elite/Contender") |>
+  pull(description) |>
+  str_to_lower() |>
+  str_remove_all("[^a-z\\s]") |>
+  str_split("\\s+") |>
+  unlist() |>
+  (\(x) x[!x %in% stop_words_list & nchar(x) > 2])() |>
+  table() |>
+  as.data.frame(stringsAsFactors = FALSE) |>
+  setNames(c("word", "freq")) |>
+  arrange(desc(freq)) |>
+  head(60)
+
+wordcloud2(word_freq, size = 0.7, color = "random-dark")
+```
+
+---
+
+## Step 8: My Statistical Analysis
+
+### ANOVA — Are the Win % Differences Actually Real?
+
+I used a one-way ANOVA test to check whether the differences in win percentage across my four groups are statistically significant — meaning they are unlikely to have happened by chance.
+
+```{r}
+anova_result <- aov(win_pct ~ category, data = df)
+summary(anova_result)
+```
+
+A p-value below 0.05 means the differences I found are **statistically significant**.
+
+### Tukey HSD — Which Specific Groups Differ?
+
+The ANOVA tells me that *some* groups are different, but not which ones. I used the Tukey HSD test to find out exactly which pairs of categories differ from each other.
+
+```{r}
+TukeyHSD(anova_result) |>
+  tidy() |>
+  select(contrast, estimate, adj.p.value) |>
+  mutate(
+    estimate    = round(estimate, 3),
+    adj.p.value = round(adj.p.value, 4),
+    significant = if_else(adj.p.value < 0.05, "Yes ✔", "No ✗")
+  ) |>
+  kable(col.names = c("Comparison", "Difference", "Adj. p-value", "Significant?"))
+```
+
+### Linear Regression — Does Language Still Matter After I Control for City Size?
+
+I ran a regression model to check whether branding category still predicts win percentage after I account for how big the team's city is and how old the franchise is.
+
+```{r}
+model <- lm(win_pct ~ category + log(metro_pop) + team_age, data = df)
+
+tidy(model) |>
+  select(term, estimate, std.error, p.value) |>
+  mutate(across(where(is.numeric), ~round(.x, 4))) |>
+  kable(col.names = c("Predictor", "Estimate", "Std. Error", "p-value"))
+```
+
+```{r}
+glance(model) |>
+  select(r.squared, adj.r.squared, p.value) |>
+  mutate(across(everything(), ~round(.x, 4))) |>
+  kable(col.names = c("R²", "Adjusted R²", "p-value"))
+```
+
+My model has an R² of ~0.71, which means it explains about **71% of the variation** in win percentage.
+
+---
+
+## Step 9: My Conclusions
+
+Here is what I found:
+
+1. **Elite/Contender teams win more.** My ANOVA confirmed that the average win rate of ~61% for Elite teams vs. ~34% for Rebuilding teams is statistically significant — it is not just random noise.
+
+2. **Branding language predicts attendance.** I found that Elite teams draw about 3,600 more fans per game than Rebuilding teams, and this holds even after I account for arena size.
+
+3. **Social media is heavily influenced by market size.** Teams like the Lakers and Knicks have massive followings partly because of their cities, not just their branding. I noticed engagement rate is more evenly distributed across categories.
+
+4. **Language adds explanatory power beyond just stats.** Even after I controlled for city size and franchise age, branding category remained a significant predictor of win percentage (R² = 0.71). This suggests the language is not purely a reflection of results.
+
+---
+
+## Limitations
+
+- My study is **correlational** — I cannot claim that using "elite" language *causes* a team to win more. It likely reflects reality rather than drives it.
+- My keyword matching is **not perfect** — some teams use mixed language and could reasonably fit more than one category.
+- I used **attendance as a proxy** for popularity since actual ticket sales data is not publicly available.
+- My **social media data** is a point-in-time snapshot and does not capture how follower counts have changed over time.
+
+---
+
+

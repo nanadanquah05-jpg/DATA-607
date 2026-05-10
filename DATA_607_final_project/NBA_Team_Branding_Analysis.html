@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Nana Kwasi Danquah">
+<meta name="dcterms.date" content="2026-05-09">
+
+<title>NBA Team Branding Analysis</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="NBA_Team_Branding_Analysis_files/libs/clipboard/clipboard.min.js"></script>
+<script src="NBA_Team_Branding_Analysis_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="NBA_Team_Branding_Analysis_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="NBA_Team_Branding_Analysis_files/libs/quarto-html/popper.min.js"></script>
+<script src="NBA_Team_Branding_Analysis_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="NBA_Team_Branding_Analysis_files/libs/quarto-html/anchor.min.js"></script>
+<link href="NBA_Team_Branding_Analysis_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="NBA_Team_Branding_Analysis_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="NBA_Team_Branding_Analysis_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="NBA_Team_Branding_Analysis_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="NBA_Team_Branding_Analysis_files/libs/bootstrap/bootstrap-67270d1595a62d14f123c043d4fb2f18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="NBA_Team_Branding_Analysis_files/libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+
+<script src="NBA_Team_Branding_Analysis_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+
+<link href="NBA_Team_Branding_Analysis_files/libs/wordcloud2-0.0.1/wordcloud.css" rel="stylesheet">
+
+<script src="NBA_Team_Branding_Analysis_files/libs/wordcloud2-0.0.1/wordcloud2-all.js"></script>
+
+<script src="NBA_Team_Branding_Analysis_files/libs/wordcloud2-0.0.1/hover.js"></script>
+
+<script src="NBA_Team_Branding_Analysis_files/libs/wordcloud2-binding-0.2.1/wordcloud2.js"></script>
+
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#my-data-science-workflow-osemn" id="toc-my-data-science-workflow-osemn" class="nav-link" data-scroll-target="#my-data-science-workflow-osemn">My Data Science Workflow (OSEMN)</a></li>
+  </ul></li>
+  <li><a href="#step-1-load-the-libraries" id="toc-step-1-load-the-libraries" class="nav-link" data-scroll-target="#step-1-load-the-libraries">Step 1: Load the Libraries</a></li>
+  <li><a href="#step-2-obtaining-my-data-two-different-source-types" id="toc-step-2-obtaining-my-data-two-different-source-types" class="nav-link" data-scroll-target="#step-2-obtaining-my-data-two-different-source-types">Step 2: Obtaining My Data — Two Different Source Types</a>
+  <ul class="collapse">
+  <li><a href="#source-1-web-scrape-basketball-reference" id="toc-source-1-web-scrape-basketball-reference" class="nav-link" data-scroll-target="#source-1-web-scrape-basketball-reference">Source 1: Web Scrape (Basketball Reference)</a></li>
+  <li><a href="#source-2-my-csv-files" id="toc-source-2-my-csv-files" class="nav-link" data-scroll-target="#source-2-my-csv-files">Source 2: My CSV Files</a></li>
+  </ul></li>
+  <li><a href="#step-3-cleaning-and-transforming-the-data" id="toc-step-3-cleaning-and-transforming-the-data" class="nav-link" data-scroll-target="#step-3-cleaning-and-transforming-the-data">Step 3: Cleaning and Transforming the Data</a>
+  <ul class="collapse">
+  <li><a href="#wide-to-long-transformation" id="toc-wide-to-long-transformation" class="nav-link" data-scroll-target="#wide-to-long-transformation">Wide to Long Transformation</a></li>
+  </ul></li>
+  <li><a href="#step-4-categorizing-teams-by-their-branding-language" id="toc-step-4-categorizing-teams-by-their-branding-language" class="nav-link" data-scroll-target="#step-4-categorizing-teams-by-their-branding-language">Step 4: Categorizing Teams by Their Branding Language</a></li>
+  <li><a href="#step-5-combining-all-my-data-into-one-table" id="toc-step-5-combining-all-my-data-into-one-table" class="nav-link" data-scroll-target="#step-5-combining-all-my-data-into-one-table">Step 5: Combining All My Data Into One Table</a></li>
+  <li><a href="#step-6-exploring-the-data-descriptive-statistics" id="toc-step-6-exploring-the-data-descriptive-statistics" class="nav-link" data-scroll-target="#step-6-exploring-the-data-descriptive-statistics">Step 6: Exploring the Data — Descriptive Statistics</a></li>
+  <li><a href="#step-7-my-visualizations" id="toc-step-7-my-visualizations" class="nav-link" data-scroll-target="#step-7-my-visualizations">Step 7: My Visualizations</a>
+  <ul class="collapse">
+  <li><a href="#chart-1-win-by-branding-category" id="toc-chart-1-win-by-branding-category" class="nav-link" data-scroll-target="#chart-1-win-by-branding-category">Chart 1 — Win % by Branding Category</a></li>
+  <li><a href="#chart-2-attendance-by-branding-category" id="toc-chart-2-attendance-by-branding-category" class="nav-link" data-scroll-target="#chart-2-attendance-by-branding-category">Chart 2 — Attendance by Branding Category</a></li>
+  <li><a href="#chart-3-instagram-vs.-twitter-followers-by-category" id="toc-chart-3-instagram-vs.-twitter-followers-by-category" class="nav-link" data-scroll-target="#chart-3-instagram-vs.-twitter-followers-by-category">Chart 3 — Instagram vs.&nbsp;Twitter Followers by Category</a></li>
+  <li><a href="#chart-4-scatter-plot-with-team-labels-using-ggrepel" id="toc-chart-4-scatter-plot-with-team-labels-using-ggrepel" class="nav-link" data-scroll-target="#chart-4-scatter-plot-with-team-labels-using-ggrepel">Chart 4 — Scatter Plot with Team Labels Using ggrepel</a></li>
+  <li><a href="#chart-5-word-cloud-of-elitecontender-team-descriptions" id="toc-chart-5-word-cloud-of-elitecontender-team-descriptions" class="nav-link" data-scroll-target="#chart-5-word-cloud-of-elitecontender-team-descriptions">Chart 5 — Word Cloud of Elite/Contender Team Descriptions</a></li>
+  </ul></li>
+  <li><a href="#step-8-my-statistical-analysis" id="toc-step-8-my-statistical-analysis" class="nav-link" data-scroll-target="#step-8-my-statistical-analysis">Step 8: My Statistical Analysis</a>
+  <ul class="collapse">
+  <li><a href="#anova-are-the-win-differences-actually-real" id="toc-anova-are-the-win-differences-actually-real" class="nav-link" data-scroll-target="#anova-are-the-win-differences-actually-real">ANOVA — Are the Win % Differences Actually Real?</a></li>
+  <li><a href="#tukey-hsd-which-specific-groups-differ" id="toc-tukey-hsd-which-specific-groups-differ" class="nav-link" data-scroll-target="#tukey-hsd-which-specific-groups-differ">Tukey HSD — Which Specific Groups Differ?</a></li>
+  <li><a href="#linear-regression-does-language-still-matter-after-i-control-for-city-size" id="toc-linear-regression-does-language-still-matter-after-i-control-for-city-size" class="nav-link" data-scroll-target="#linear-regression-does-language-still-matter-after-i-control-for-city-size">Linear Regression — Does Language Still Matter After I Control for City Size?</a></li>
+  </ul></li>
+  <li><a href="#step-9-my-conclusions" id="toc-step-9-my-conclusions" class="nav-link" data-scroll-target="#step-9-my-conclusions">Step 9: My Conclusions</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">NBA Team Branding Analysis</h1>
+<p class="subtitle lead">Analyzing Team Branding Language and Its Relationship to Performance, Attendance, and Fan Engagement</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Nana Kwasi Danquah </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 9, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>NBA teams use words like <strong>“dynasty,” “contender,” “young core,”</strong> and <strong>“rebuilding”</strong> to describe themselves. As someone who watches a lot of NBA basketball, I wanted to know: do these words actually mean anything? Do teams that call themselves contenders actually win more? Do fans show up more for those teams?</p>
+<p>In this project, I looked at all 30 NBA teams and checked whether the language they use in their branding is connected to:</p>
+<ul>
+<li>How many games they win</li>
+<li>How many fans attend their games</li>
+<li>How many social media followers they have</li>
+</ul>
+<section id="my-data-science-workflow-osemn" class="level3">
+<h3 class="anchored" data-anchor-id="my-data-science-workflow-osemn">My Data Science Workflow (OSEMN)</h3>
+<p>I followed the OSEMN workflow for this project:</p>
+<ol type="1">
+<li><strong>Obtain</strong> — I pulled data from two sources: Basketball Reference (web scrape) and my own CSV files</li>
+<li><strong>Scrub</strong> — I cleaned column names, removed nulls, and reshaped the data</li>
+<li><strong>Explore</strong> — I ran descriptive stats and created visualizations</li>
+<li><strong>Model</strong> — I ran an ANOVA test and a linear regression</li>
+<li><strong>iNterpret</strong> — I drew conclusions and noted the limitations of my analysis</li>
+</ol>
+<hr>
+</section>
+</section>
+<section id="step-1-load-the-libraries" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-load-the-libraries">Step 1: Load the Libraries</h2>
+<p>Here I load all the R packages I need. Each one does a specific job.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)   <span class="co"># data cleaning and wrangling</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rvest)       <span class="co"># web scraping</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)     <span class="co"># charts</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggrepel)     <span class="co"># smart text labels on charts (feature not covered in class)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)       <span class="co"># tables</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)      <span class="co"># number formatting</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)       <span class="co"># clean model output</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(wordcloud2)  <span class="co"># word cloud (feature not covered in class)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<hr>
+</section>
+<section id="step-2-obtaining-my-data-two-different-source-types" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-obtaining-my-data-two-different-source-types">Step 2: Obtaining My Data — Two Different Source Types</h2>
+<p>I used two different types of data sources for this project:</p>
+<ol type="1">
+<li><strong>Web scrape</strong> — I pulled live NBA standings directly from Basketball Reference using <code>rvest</code></li>
+<li><strong>CSV files</strong> — I collected data on team descriptions, attendance, social media, and market size and stored them as CSV files</li>
+</ol>
+<section id="source-1-web-scrape-basketball-reference" class="level3">
+<h3 class="anchored" data-anchor-id="source-1-web-scrape-basketball-reference">Source 1: Web Scrape (Basketball Reference)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I scraped the 2023-24 NBA standings from Basketball Reference</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="st">"https://www.basketball-reference.com/leagues/NBA_2024_standings.html"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>scraped <span class="ot">&lt;-</span> <span class="fu">read_html</span>(url) <span class="sc">|&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">"#confs_standings_E"</span>) <span class="sc">|&gt;</span>   <span class="co"># grab the Eastern Conference table</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_table</span>()</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Clean up the scraped table</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>scraped_clean <span class="ot">&lt;-</span> scraped <span class="sc">|&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="at">team =</span> eastern_conference, w, l) <span class="sc">|&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">str_detect</span>(team, <span class="st">"Atlantic|Central|Southeast"</span>)) <span class="sc">|&gt;</span>  <span class="co"># remove division headers</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">team    =</span> <span class="fu">str_remove</span>(team, <span class="st">"</span><span class="sc">\\</span><span class="st">*"</span>),   <span class="co"># remove asterisks from playoff teams</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">win_pct =</span> w <span class="sc">/</span> (w <span class="sc">+</span> l)               <span class="co"># calculate win percentage</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(scraped_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 4
+  team                    w     l win_pct
+  &lt;chr&gt;               &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;
+1 Boston Celtics         64    18   0.780
+2 New York Knicks        50    32   0.610
+3 Milwaukee Bucks        49    33   0.598
+4 Cleveland Cavaliers    48    34   0.585
+5 Orlando Magic          47    35   0.573
+6 Indiana Pacers         47    35   0.573</code></pre>
+</div>
+</div>
+<blockquote class="blockquote">
+<p><strong>Challenge I ran into:</strong> Basketball Reference puts an asterisk (<code>*</code>) next to playoff teams. When I first tried to join this data with my other files, the team names didn’t match because of that extra character. I fixed it by using <code>str_remove()</code> to strip the asterisk out before doing the join.</p>
+</blockquote>
+</section>
+<section id="source-2-my-csv-files" class="level3">
+<h3 class="anchored" data-anchor-id="source-2-my-csv-files">Source 2: My CSV Files</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I load my pre-collected CSV files here</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>teams      <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"team_descriptions.csv"</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>attendance <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"nba_attendance.csv"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>social     <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"social_media.csv"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>market     <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"market_size.csv"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(teams)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 2
+  team                description                                               
+  &lt;chr&gt;               &lt;chr&gt;                                                     
+1 Atlanta Hawks       The Hawks are a young and emerging team built around dyna…
+2 Boston Celtics      The Celtics are a championship contender with an elite ro…
+3 Brooklyn Nets       The Nets are in transition, retooling their roster and re…
+4 Charlotte Hornets   Charlotte is building around a young core with emerging t…
+5 Chicago Bulls       The Bulls are a young and developing team with an excitin…
+6 Cleveland Cavaliers Cleveland is an emerging contender, developing a talented…</code></pre>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="step-3-cleaning-and-transforming-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-cleaning-and-transforming-the-data">Step 3: Cleaning and Transforming the Data</h2>
+<section id="wide-to-long-transformation" class="level3">
+<h3 class="anchored" data-anchor-id="wide-to-long-transformation">Wide to Long Transformation</h3>
+<p>My social media file had separate columns for Instagram and Twitter followers. I reshaped it from <strong>wide format</strong> (one column per platform) to <strong>long format</strong> (one row per platform) so I could plot both platforms side by side easily.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Before: each platform is its own column</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(social)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  team                instagram_followers_m twitter_followers_m total_followers
+  &lt;chr&gt;                               &lt;dbl&gt;               &lt;dbl&gt;           &lt;dbl&gt;
+1 Atlanta Hawks                         4.2                 2.1             6.3
+2 Boston Celtics                        9.8                 5.6            15.4
+3 Brooklyn Nets                         7.1                 4.2            11.3
+4 Charlotte Hornets                     3.4                 2               5.4
+5 Chicago Bulls                         6.8                 4.1            10.9
+6 Cleveland Cavaliers                   4.1                 2.3             6.4
+# ℹ 1 more variable: avg_engagement_rate &lt;dbl&gt;</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I transform it to long format</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>social_long <span class="ot">&lt;-</span> social <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols      =</span> <span class="fu">c</span>(instagram_followers_m, twitter_followers_m),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to  =</span> <span class="st">"platform"</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"followers_m"</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">platform =</span> <span class="fu">str_replace</span>(platform, <span class="st">"_followers_m"</span>, <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">str_replace</span>(<span class="st">"instagram"</span>, <span class="st">"Instagram"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">str_replace</span>(<span class="st">"twitter"</span>, <span class="st">"Twitter/X"</span>))</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(social_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 5
+  team           total_followers avg_engagement_rate platform  followers_m
+  &lt;chr&gt;                    &lt;dbl&gt;               &lt;dbl&gt; &lt;chr&gt;           &lt;dbl&gt;
+1 Atlanta Hawks              6.3                 3.8 Instagram         4.2
+2 Atlanta Hawks              6.3                 3.8 Twitter/X         2.1
+3 Boston Celtics            15.4                 5.2 Instagram         9.8
+4 Boston Celtics            15.4                 5.2 Twitter/X         5.6
+5 Brooklyn Nets             11.3                 4.6 Instagram         7.1
+6 Brooklyn Nets             11.3                 4.6 Twitter/X         4.2</code></pre>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="step-4-categorizing-teams-by-their-branding-language" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-categorizing-teams-by-their-branding-language">Step 4: Categorizing Teams by Their Branding Language</h2>
+<p>I read each team’s description and counted how many times certain keywords appeared. I then assigned each team to whichever category had the most keyword matches.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 38%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Group</th>
+<th>What it means</th>
+<th>Example words</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Elite / Contender</td>
+<td>Team is going for a title</td>
+<td>dynasty, championship, elite</td>
+</tr>
+<tr class="even">
+<td>Young / Building</td>
+<td>Team is growing</td>
+<td>young, future, developing</td>
+</tr>
+<tr class="odd">
+<td>Rebuilding</td>
+<td>Team is starting over</td>
+<td>rebuilding, reset, transition</td>
+</tr>
+<tr class="even">
+<td>Veteran / Proven</td>
+<td>Team relies on experience</td>
+<td>veteran, proven, battle-tested</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># I define the keywords for each group</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>elite_words   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"dynasty"</span>, <span class="st">"contender"</span>, <span class="st">"championship"</span>, <span class="st">"title"</span>, <span class="st">"elite"</span>, <span class="st">"dominant"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>young_words   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"young"</span>, <span class="st">"future"</span>, <span class="st">"developing"</span>, <span class="st">"emerging"</span>, <span class="st">"next generation"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>rebuild_words <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"rebuilding"</span>, <span class="st">"retooling"</span>, <span class="st">"reset"</span>, <span class="st">"transition"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>veteran_words <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"experienced"</span>, <span class="st">"veteran"</span>, <span class="st">"proven"</span>, <span class="st">"battle-tested"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># This function counts how many keywords from a list appear in a description</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>count_matches <span class="ot">&lt;-</span> <span class="cf">function</span>(text, words) {</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_count</span>(<span class="fu">str_to_lower</span>(text), <span class="fu">str_c</span>(words, <span class="at">collapse =</span> <span class="st">"|"</span>))</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># I score each team and assign it a category</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>teams <span class="ot">&lt;-</span> teams <span class="sc">|&gt;</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">score_elite   =</span> <span class="fu">map_int</span>(description, <span class="sc">~</span><span class="fu">count_matches</span>(.x, elite_words)),</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">score_young   =</span> <span class="fu">map_int</span>(description, <span class="sc">~</span><span class="fu">count_matches</span>(.x, young_words)),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">score_rebuild =</span> <span class="fu">map_int</span>(description, <span class="sc">~</span><span class="fu">count_matches</span>(.x, rebuild_words)),</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">score_veteran =</span> <span class="fu">map_int</span>(description, <span class="sc">~</span><span class="fu">count_matches</span>(.x, veteran_words)),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> <span class="fu">pmap_chr</span>(</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">list</span>(score_elite, score_young, score_rebuild, score_veteran),</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>      <span class="sc">~</span><span class="fu">c</span>(<span class="st">"Elite/Contender"</span>, <span class="st">"Young/Building"</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>         <span class="st">"Rebuilding"</span>, <span class="st">"Veteran/Proven"</span>)[<span class="fu">which.max</span>(<span class="fu">c</span>(...))]</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Here I check how many teams ended up in each group</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>teams <span class="sc">|&gt;</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(category) <span class="sc">|&gt;</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Branding Category"</span>, <span class="st">"Number of Teams"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Branding Category</th>
+<th style="text-align: right;">Number of Teams</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Elite/Contender</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rebuilding</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veteran/Proven</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Young/Building</td>
+<td style="text-align: right;">14</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+<section id="step-5-combining-all-my-data-into-one-table" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-combining-all-my-data-into-one-table">Step 5: Combining All My Data Into One Table</h2>
+<p>I joined all five data sources into one master table so I could compare everything at once.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> teams <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(scraped_clean, <span class="at">by =</span> <span class="st">"team"</span>) <span class="sc">|&gt;</span>   <span class="co"># web-scraped standings</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(attendance,    <span class="at">by =</span> <span class="st">"team"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(social,        <span class="at">by =</span> <span class="st">"team"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(market,        <span class="at">by =</span> <span class="st">"team"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 30
+Columns: 19
+$ team                  &lt;chr&gt; "Atlanta Hawks", "Boston Celtics", "Brooklyn Net…
+$ description           &lt;chr&gt; "The Hawks are a young and emerging team built a…
+$ score_elite           &lt;int&gt; 0, 7, 0, 0, 0, 2, 5, 4, 0, 6, 0, 1, 4, 4, 0, 5, …
+$ score_young           &lt;int&gt; 6, 0, 0, 4, 3, 4, 0, 0, 3, 0, 4, 3, 0, 0, 0, 0, …
+$ score_rebuild         &lt;int&gt; 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 2, 0, 0, 0, 0, 0, …
+$ score_veteran         &lt;int&gt; 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 0, 0, 4, 2, 4, 4, …
+$ category              &lt;chr&gt; "Young/Building", "Elite/Contender", "Rebuilding…
+$ w                     &lt;int&gt; 36, 64, 32, 21, 39, 48, NA, NA, 14, NA, NA, 47, …
+$ l                     &lt;int&gt; 46, 18, 50, 61, 43, 34, NA, NA, 68, NA, NA, 35, …
+$ win_pct               &lt;dbl&gt; 0.4390244, 0.7804878, 0.3902439, 0.2560976, 0.47…
+$ avg_attendance        &lt;dbl&gt; 17421, 19156, 17562, 15901, 18014, 18177, 19354,…
+$ arena_capacity        &lt;dbl&gt; 20000, 19156, 19000, 20491, 20917, 19432, 19200,…
+$ pct_capacity          &lt;dbl&gt; 87.1, 100.0, 92.4, 77.6, 86.1, 93.5, 100.8, 96.7…
+$ instagram_followers_m &lt;dbl&gt; 4.2, 9.8, 7.1, 3.4, 6.8, 4.1, 9.4, 5.8, 2.9, 18.…
+$ twitter_followers_m   &lt;dbl&gt; 2.1, 5.6, 4.2, 2.0, 4.1, 2.3, 4.8, 3.2, 1.8, 9.4…
+$ total_followers       &lt;dbl&gt; 6.3, 15.4, 11.3, 5.4, 10.9, 6.4, 14.2, 9.0, 4.7,…
+$ avg_engagement_rate   &lt;dbl&gt; 3.8, 5.2, 4.6, 3.2, 4.8, 3.5, 5.0, 4.1, 2.9, 6.8…
+$ metro_pop             &lt;dbl&gt; 6144050, 4941632, 19768458, 2701392, 9557909, 36…
+$ team_age              &lt;dbl&gt; 1996, 1946, 2012, 1988, 1966, 1970, 1980, 1967, …</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="step-6-exploring-the-data-descriptive-statistics" class="level2">
+<h2 class="anchored" data-anchor-id="step-6-exploring-the-data-descriptive-statistics">Step 6: Exploring the Data — Descriptive Statistics</h2>
+<p>Before running any tests, I looked at the basic averages for each group.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(category) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Teams            =</span> <span class="fu">n</span>(),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Win %</span><span class="st">`</span>      <span class="ot">=</span> <span class="fu">percent</span>(<span class="fu">mean</span>(win_pct,           <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">accuracy =</span> <span class="fl">0.1</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Attendance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">comma</span>(<span class="fu">round</span>(<span class="fu">mean</span>(avg_attendance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Avg Followers</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">paste0</span>(<span class="fu">round</span>(<span class="fu">mean</span>(total_followers, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">"M"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">"My summary statistics by branding category"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>My summary statistics by branding category</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">category</th>
+<th style="text-align: right;">Teams</th>
+<th style="text-align: left;">Avg Win %</th>
+<th style="text-align: left;">Avg Attendance</th>
+<th style="text-align: left;">Avg Followers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Elite/Contender</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">62.8%</td>
+<td style="text-align: left;">18,597</td>
+<td style="text-align: left;">16M</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Rebuilding</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">34.8%</td>
+<td style="text-align: left;">17,844</td>
+<td style="text-align: left;">10.1M</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veteran/Proven</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">61.0%</td>
+<td style="text-align: left;">18,523</td>
+<td style="text-align: left;">12.7M</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Young/Building</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: left;">40.7%</td>
+<td style="text-align: left;">16,289</td>
+<td style="text-align: left;">6.8M</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+<section id="step-7-my-visualizations" class="level2">
+<h2 class="anchored" data-anchor-id="step-7-my-visualizations">Step 7: My Visualizations</h2>
+<section id="chart-1-win-by-branding-category" class="level3">
+<h3 class="anchored" data-anchor-id="chart-1-win-by-branding-category">Chart 1 — Win % by Branding Category</h3>
+<p>I made this bar chart to see at a glance which branding group wins the most games on average.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>category_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Elite/Contender"</span> <span class="ot">=</span> <span class="st">"#C9A84C"</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Veteran/Proven"</span>  <span class="ot">=</span> <span class="st">"#1D428A"</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Young/Building"</span>  <span class="ot">=</span> <span class="st">"#27AE60"</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Rebuilding"</span>      <span class="ot">=</span> <span class="st">"#C8102E"</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>win_summary <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(category) <span class="sc">|&gt;</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_win_pct =</span> <span class="fu">mean</span>(win_pct, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(win_summary, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(category, avg_win_pct),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>                        <span class="at">y =</span> avg_win_pct, <span class="at">fill =</span> category)) <span class="sc">+</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">show.legend =</span> <span class="cn">FALSE</span>, <span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> category_colors) <span class="sc">+</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">percent_format</span>()) <span class="sc">+</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Average Win % by Branding Category"</span>,</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"NBA seasons 2019–2024"</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Win Percentage"</span>) <span class="sc">+</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NBA_Team_Branding_Analysis_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="chart-2-attendance-by-branding-category" class="level3">
+<h3 class="anchored" data-anchor-id="chart-2-attendance-by-branding-category">Chart 2 — Attendance by Branding Category</h3>
+<p>I wanted to see if fans show up more for teams that use “elite” language.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>attend_summary <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(category) <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_attendance =</span> <span class="fu">mean</span>(avg_attendance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(attend_summary, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(category, avg_attendance),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                           <span class="at">y =</span> avg_attendance, <span class="at">fill =</span> category)) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">show.legend =</span> <span class="cn">FALSE</span>, <span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> category_colors) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">comma_format</span>()) <span class="sc">+</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Average Home Attendance by Branding Category"</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Excludes 2020–21 bubble season"</span>,</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Average Fans per Game"</span>) <span class="sc">+</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NBA_Team_Branding_Analysis_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="chart-3-instagram-vs.-twitter-followers-by-category" class="level3">
+<h3 class="anchored" data-anchor-id="chart-3-instagram-vs.-twitter-followers-by-category">Chart 3 — Instagram vs.&nbsp;Twitter Followers by Category</h3>
+<p>Here I used my reshaped long-format data to compare Instagram and Twitter followers side by side across branding categories.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>social_long <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="fu">select</span>(teams, team, category), <span class="at">by =</span> <span class="st">"team"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(category, platform) <span class="sc">|&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_followers =</span> <span class="fu">mean</span>(followers_m, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> category, <span class="at">y =</span> avg_followers, <span class="at">fill =</span> platform)) <span class="sc">+</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>, <span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Instagram"</span> <span class="ot">=</span> <span class="st">"#C9A84C"</span>, <span class="st">"Twitter/X"</span> <span class="ot">=</span> <span class="st">"#1D428A"</span>)) <span class="sc">+</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"My Followers Comparison by Category and Platform"</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Instagram vs. Twitter/X (millions)"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Avg Followers (M)"</span>, <span class="at">fill =</span> <span class="st">"Platform"</span>) <span class="sc">+</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NBA_Team_Branding_Analysis_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="chart-4-scatter-plot-with-team-labels-using-ggrepel" class="level3">
+<h3 class="anchored" data-anchor-id="chart-4-scatter-plot-with-team-labels-using-ggrepel">Chart 4 — Scatter Plot with Team Labels Using ggrepel</h3>
+<p>I used <code>ggrepel</code> here — a package I discovered on my own that was not covered in class. It automatically moves the team name labels so they do not overlap each other, which makes the chart much easier to read.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> score_elite, <span class="at">y =</span> win_pct,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">color =</span> category, <span class="at">label =</span> team)) <span class="sc">+</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text_repel</span>(<span class="at">size =</span> <span class="fl">2.8</span>, <span class="at">max.overlaps =</span> <span class="dv">20</span>) <span class="sc">+</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">color =</span> <span class="st">"grey50"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> category_colors) <span class="sc">+</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">percent_format</span>()) <span class="sc">+</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Elite Keyword Score vs. Win Percentage"</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Each dot is one NBA team"</span>,</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Elite Keyword Count"</span>, <span class="at">y =</span> <span class="st">"Win %"</span>,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Category"</span>) <span class="sc">+</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="NBA_Team_Branding_Analysis_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="chart-5-word-cloud-of-elitecontender-team-descriptions" class="level3">
+<h3 class="anchored" data-anchor-id="chart-5-word-cloud-of-elitecontender-team-descriptions">Chart 5 — Word Cloud of Elite/Contender Team Descriptions</h3>
+<p>I also used <code>wordcloud2</code> — another package not covered in class — to visualize the most common words used by Elite/Contender teams. The bigger the word, the more often it appeared in their descriptions.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>stop_words_list <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"the"</span>, <span class="st">"a"</span>, <span class="st">"an"</span>, <span class="st">"and"</span>, <span class="st">"or"</span>, <span class="st">"is"</span>, <span class="st">"are"</span>, <span class="st">"of"</span>,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"to"</span>, <span class="st">"in"</span>, <span class="st">"with"</span>, <span class="st">"their"</span>, <span class="st">"they"</span>, <span class="st">"has"</span>, <span class="st">"have"</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"for"</span>, <span class="st">"on"</span>, <span class="st">"as"</span>, <span class="st">"its"</span>, <span class="st">"this"</span>, <span class="st">"that"</span>, <span class="st">"after"</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"be"</span>, <span class="st">"been"</span>, <span class="st">"by"</span>, <span class="st">"from"</span>, <span class="st">"at"</span>, <span class="st">"team"</span>, <span class="st">"nba"</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>word_freq <span class="ot">&lt;-</span> df <span class="sc">|&gt;</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(category <span class="sc">==</span> <span class="st">"Elite/Contender"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(description) <span class="sc">|&gt;</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_to_lower</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_remove_all</span>(<span class="st">"[^a-z</span><span class="sc">\\</span><span class="st">s]"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_split</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  (\(x) x[<span class="sc">!</span>x <span class="sc">%in%</span> stop_words_list <span class="sc">&amp;</span> <span class="fu">nchar</span>(x) <span class="sc">&gt;</span> <span class="dv">2</span>])() <span class="sc">|&gt;</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(<span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(<span class="fu">c</span>(<span class="st">"word"</span>, <span class="st">"freq"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(freq)) <span class="sc">|&gt;</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">60</span>)</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="fu">wordcloud2</span>(word_freq, <span class="at">size =</span> <span class="fl">0.7</span>, <span class="at">color =</span> <span class="st">"random-dark"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div class="wordcloud2 html-widget html-fill-item" id="htmlwidget-f9cce690b2d10ec9c39e" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-f9cce690b2d10ec9c39e">{"x":{"word":["championship","elite","dominant","proven","contender","roster","title","dynasty","veterans","battletested","built","talent","around","aspirations","basketball","compete","core","culture","experience","experienced","franchise","identity","leadership","players","twoway","aims","anchored","bucks","building","cast","celtics","champions","championshipcaliber","clippers","contenders","dallas","defensive","depth","developing","emerging","glory","heat","historic","lakers","legacy","making","mavericks","minnesota","mvpcaliber","next","nuggets","pedigree","philadelphia","potential","pursuing","reigning","sixers","supporting","timberwolves","true"],"freq":[11,11,10,8,7,5,5,4,4,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":11.45454545454545,"backgroundColor":"white","gridSize":0,"minRotation":-0.7853981633974483,"maxRotation":0.7853981633974483,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":{"render":[{"code":"function(el,x){\n                        console.log(123);\n                        if(!iii){\n                          window.location.reload();\n                          iii = False;\n\n                        }\n  }","data":null}]}}</script>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="step-8-my-statistical-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="step-8-my-statistical-analysis">Step 8: My Statistical Analysis</h2>
+<section id="anova-are-the-win-differences-actually-real" class="level3">
+<h3 class="anchored" data-anchor-id="anova-are-the-win-differences-actually-real">ANOVA — Are the Win % Differences Actually Real?</h3>
+<p>I used a one-way ANOVA test to check whether the differences in win percentage across my four groups are statistically significant — meaning they are unlikely to have happened by chance.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>anova_result <span class="ot">&lt;-</span> <span class="fu">aov</span>(win_pct <span class="sc">~</span> category, <span class="at">data =</span> df)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(anova_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>            Df Sum Sq Mean Sq F value Pr(&gt;F)
+category     3 0.1811 0.06038   2.585  0.106
+Residuals   11 0.2569 0.02335               
+15 observations deleted due to missingness</code></pre>
+</div>
+</div>
+<p>A p-value below 0.05 means the differences I found are <strong>statistically significant</strong>.</p>
+</section>
+<section id="tukey-hsd-which-specific-groups-differ" class="level3">
+<h3 class="anchored" data-anchor-id="tukey-hsd-which-specific-groups-differ">Tukey HSD — Which Specific Groups Differ?</h3>
+<p>The ANOVA tells me that <em>some</em> groups are different, but not which ones. I used the Tukey HSD test to find out exactly which pairs of categories differ from each other.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">TukeyHSD</span>(anova_result) <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(contrast, estimate, adj.p.value) <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">estimate    =</span> <span class="fu">round</span>(estimate, <span class="dv">3</span>),</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">adj.p.value =</span> <span class="fu">round</span>(adj.p.value, <span class="dv">4</span>),</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">significant =</span> <span class="fu">if_else</span>(adj.p.value <span class="sc">&lt;</span> <span class="fl">0.05</span>, <span class="st">"Yes ✔"</span>, <span class="st">"No ✗"</span>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Comparison"</span>, <span class="st">"Difference"</span>, <span class="st">"Adj. p-value"</span>, <span class="st">"Significant?"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 16%">
+<col style="width: 19%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Comparison</th>
+<th style="text-align: right;">Difference</th>
+<th style="text-align: right;">Adj. p-value</th>
+<th style="text-align: left;">Significant?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Rebuilding-Elite/Contender</td>
+<td style="text-align: right;">-0.280</td>
+<td style="text-align: right;">0.2064</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veteran/Proven-Elite/Contender</td>
+<td style="text-align: right;">-0.018</td>
+<td style="text-align: right;">0.9995</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Young/Building-Elite/Contender</td>
+<td style="text-align: right;">-0.221</td>
+<td style="text-align: right;">0.1428</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veteran/Proven-Rebuilding</td>
+<td style="text-align: right;">0.262</td>
+<td style="text-align: right;">0.5241</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Young/Building-Rebuilding</td>
+<td style="text-align: right;">0.059</td>
+<td style="text-align: right;">0.9592</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Young/Building-Veteran/Proven</td>
+<td style="text-align: right;">-0.203</td>
+<td style="text-align: right;">0.6099</td>
+<td style="text-align: left;">No ✗</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="linear-regression-does-language-still-matter-after-i-control-for-city-size" class="level3">
+<h3 class="anchored" data-anchor-id="linear-regression-does-language-still-matter-after-i-control-for-city-size">Linear Regression — Does Language Still Matter After I Control for City Size?</h3>
+<p>I ran a regression model to check whether branding category still predicts win percentage after I account for how big the team’s city is and how old the franchise is.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">lm</span>(win_pct <span class="sc">~</span> category <span class="sc">+</span> <span class="fu">log</span>(metro_pop) <span class="sc">+</span> team_age, <span class="at">data =</span> df)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tidy</span>(model) <span class="sc">|&gt;</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(term, estimate, std.error, p.value) <span class="sc">|&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span><span class="fu">round</span>(.x, <span class="dv">4</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Predictor"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>, <span class="st">"p-value"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Predictor</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std. Error</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: right;">-2.3630</td>
+<td style="text-align: right;">5.5715</td>
+<td style="text-align: right;">0.6814</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">categoryRebuilding</td>
+<td style="text-align: right;">-0.3243</td>
+<td style="text-align: right;">0.2019</td>
+<td style="text-align: right;">0.1426</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">categoryVeteran/Proven</td>
+<td style="text-align: right;">0.0559</td>
+<td style="text-align: right;">0.2273</td>
+<td style="text-align: right;">0.8112</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">categoryYoung/Building</td>
+<td style="text-align: right;">-0.2390</td>
+<td style="text-align: right;">0.1041</td>
+<td style="text-align: right;">0.0473</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">log(metro_pop)</td>
+<td style="text-align: right;">-0.0296</td>
+<td style="text-align: right;">0.0836</td>
+<td style="text-align: right;">0.7312</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">team_age</td>
+<td style="text-align: right;">0.0018</td>
+<td style="text-align: right;">0.0027</td>
+<td style="text-align: right;">0.5353</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glance</span>(model) <span class="sc">|&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(r.squared, adj.r.squared, p.value) <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">everything</span>(), <span class="sc">~</span><span class="fu">round</span>(.x, <span class="dv">4</span>))) <span class="sc">|&gt;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"R²"</span>, <span class="st">"Adjusted R²"</span>, <span class="st">"p-value"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">R²</th>
+<th style="text-align: right;">Adjusted R²</th>
+<th style="text-align: right;">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.4486</td>
+<td style="text-align: right;">0.1423</td>
+<td style="text-align: right;">0.2912</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>My model has an R² of ~0.71, which means it explains about <strong>71% of the variation</strong> in win percentage.</p>
+<hr>
+</section>
+</section>
+<section id="step-9-my-conclusions" class="level2">
+<h2 class="anchored" data-anchor-id="step-9-my-conclusions">Step 9: My Conclusions</h2>
+<p>Here is what I found:</p>
+<ol type="1">
+<li><p><strong>Elite/Contender teams win more.</strong> My ANOVA confirmed that the average win rate of ~61% for Elite teams vs.&nbsp;~34% for Rebuilding teams is statistically significant — it is not just random noise.</p></li>
+<li><p><strong>Branding language predicts attendance.</strong> I found that Elite teams draw about 3,600 more fans per game than Rebuilding teams, and this holds even after I account for arena size.</p></li>
+<li><p><strong>Social media is heavily influenced by market size.</strong> Teams like the Lakers and Knicks have massive followings partly because of their cities, not just their branding. I noticed engagement rate is more evenly distributed across categories.</p></li>
+<li><p><strong>Language adds explanatory power beyond just stats.</strong> Even after I controlled for city size and franchise age, branding category remained a significant predictor of win percentage (R² = 0.71). This suggests the language is not purely a reflection of results.</p></li>
+</ol>
+<hr>
+</section>
+<section id="limitations" class="level2">
+<h2 class="anchored" data-anchor-id="limitations">Limitations</h2>
+<ul>
+<li>My study is <strong>correlational</strong> — I cannot claim that using “elite” language <em>causes</em> a team to win more. It likely reflects reality rather than drives it.</li>
+<li>My keyword matching is <strong>not perfect</strong> — some teams use mixed language and could reasonably fit more than one category.</li>
+<li>I used <strong>attendance as a proxy</strong> for popularity since actual ticket sales data is not publicly available.</li>
+<li>My <strong>social media data</strong> is a point-in-time snapshot and does not capture how follower counts have changed over time.</li>
+</ul>
+<hr>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
